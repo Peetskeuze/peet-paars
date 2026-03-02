@@ -273,7 +273,8 @@ st.markdown("### Tussenstand")
 planned_kcal = 0  # Peet Paars kent geen geplande maaltijden
 
 extra_kcal = sum(
-    fi.kcal for fi in st.session_state.get("food_items", [])
+    fi["kcal"] if isinstance(fi, dict) else fi.kcal
+    for fi in st.session_state.get("food_items", [])
 )
 
 total_eaten_kcal = planned_kcal + extra_kcal
@@ -512,6 +513,49 @@ with st.expander("➕ Eten toevoegen", expanded=False):
 
             st.success(f"{p['label']} toegevoegd ({int(kcal)} kcal)")
             st.rerun()
+
+# ------------------------------------------------------------
+# VRIJE INVOER — eigen product (zelfde structuur als lijst)
+# ------------------------------------------------------------
+with st.expander("➕ Eigen product toevoegen", expanded=False):
+
+    free_name = st.text_input(
+        "Product",
+        placeholder="Bijv. rosbief, saus, olie"
+    )
+
+    free_unit = st.selectbox(
+        "Eenheid",
+        ["gram", "stuk", "ml"]
+    )
+
+    free_amount = st.number_input(
+        f"Hoeveelheid ({free_unit})",
+        min_value=0.0,
+        step=1.0
+    )
+
+    free_kcal_per_unit = st.number_input(
+        "kcal per eenheid",
+        min_value=0,
+        step=1
+    )
+
+    if st.button("Toevoegen", key="add_free_food"):
+        if free_name and free_amount > 0 and free_kcal_per_unit > 0:
+            total_kcal = int(free_amount * free_kcal_per_unit)
+
+            st.session_state["food_items"].append({
+                "product": free_name,
+                "amount": free_amount,
+                "unit": free_unit,
+                "kcal": total_kcal,
+            })
+
+            st.success(f"{free_name} toegevoegd ({total_kcal} kcal)")
+            st.rerun()
+        else:
+            st.warning("Vul alles in.")
 
 # ============================================================
 # ACTIE — BEWEGING TOEVOEGEN
