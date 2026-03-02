@@ -149,11 +149,7 @@ st.markdown(
 # ============================================================
 
 st.title("Peet Paars")
-st.caption("Dagkeuze voor rust- en sportdagen")
-st.markdown(
-    '<a href="#verloop" style="font-size:14px; text-decoration:none;">↳ Verloop</a>',
-    unsafe_allow_html=True
-)
+
 
 # ============================================================
 # NL labels (vaste mapping, geen locale nodig)
@@ -251,12 +247,11 @@ today = date.today()
 week_start = today - timedelta(days=today.weekday())
 week_days = [week_start + timedelta(days=i) for i in range(7)]
 
-cols = st.columns(7)
-for i, d in enumerate(week_days):
+# --- WEEKSTRIP (MOBIELPROOF): 2 rijen (4 + 3)
+def _render_day_button(d: date):
     iso = d.isoformat()
     rec = _ensure_day(iso)
 
-    # duidelijk verschillende symbolen
     if rec.get("closed"):
         dot = "🟣"       # afgesloten
     elif iso == st.session_state["selected_date"]:
@@ -266,15 +261,28 @@ for i, d in enumerate(week_days):
     else:
         dot = "◯"        # open dag
 
-    label = NL_DAY_ABBR[d.weekday()]  # MA/DI/...
+    label = NL_DAY_ABBR[d.weekday()]
 
-    with cols[i]:
-        st.button(
-            f"{label} {dot}",
-            key=f"daypick_{iso}",
-            on_click=_pick_day,
-            args=(iso,)
-        )
+    st.button(
+        f"{label} {dot}",
+        key=f"daypick_{iso}",
+        on_click=_pick_day,
+        args=(iso,),
+        use_container_width=True
+    )
+
+row1 = week_days[:4]
+row2 = week_days[4:]
+
+cols1 = st.columns(4, gap="small")
+for i, d in enumerate(row1):
+    with cols1[i]:
+        _render_day_button(d)
+
+cols2 = st.columns(3, gap="small")
+for i, d in enumerate(row2):
+    with cols2[i]:
+        _render_day_button(d)
 
 # --- header (Vandaag/Morgen/Gisteren of datum)
 selected_dt = date.fromisoformat(st.session_state["selected_date"])
@@ -289,25 +297,8 @@ month_name = NL_MONTH_FULL[selected_dt.month - 1]
 sub = f"{day_name} {selected_dt.day} {month_name}"
 
 st.markdown(f"### {title}")
-st.caption(f"{sub} · Dagtype: {day_rec['day_type'].capitalize()}")
+st.caption(sub)
 st.markdown("---")
-
-# ============================================================
-# DAGTYPE KIEZEN (RUST ↔ SPORT)
-# ============================================================
-
-day_type_label = "Sportdag" if day_rec["day_type"] == "sport" else "Rustdag"
-
-new_day_type = st.radio(
-    "Dagtype",
-    options=["rust", "sport"],
-    index=0 if day_rec["day_type"] == "rust" else 1,
-    horizontal=True,
-    format_func=lambda x: "Rustdag" if x == "rust" else "Sportdag"
-)
-
-if new_day_type != day_rec["day_type"]:
-    day_rec["day_type"] = new_day_type
 
 # ============================================================
 # HERO — TUSSENSTAND (PRE-POLISH + MICROCOPY)
