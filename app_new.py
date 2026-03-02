@@ -1,11 +1,6 @@
 # ============================================================
 # P E E T   P A A R S
-# app.py — DEEL 1
-# Fundering + Invoer (B1 UX)
-# ============================================================
-
-# ============================================================
-# HOOFDSTUK 0 — Imports & page config
+# app_new.py — CANONICAL HEADER
 # ============================================================
 
 import streamlit as st
@@ -16,16 +11,17 @@ from datetime import datetime, date, timedelta
 from core.engine import start_day
 
 # ============================================================
-# WEIGHT TRACKING — CONFIG & PAGE SETUP (CANON)
+# PAGE CONFIG — MOET EERST
 # ============================================================
-
-import streamlit as st
-from datetime import date
 
 st.set_page_config(
     page_title="Peet Paars",
     layout="centered"
 )
+
+# ============================================================
+# WEIGHT TRACKING — CONFIG
+# ============================================================
 
 WEIGH_DAY = 2  # 0=ma, 1=di, 2=woensdag, ...
 
