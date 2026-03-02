@@ -233,64 +233,27 @@ if "day" not in st.session_state:
 # (we houden het simpel: alleen day_type waarde gebruiken)
 day = st.session_state["day"]
 
-
 # ============================================================
-# HOOFDSTUK 1b — PLANNER (weekstrip) — klikvast + NL labels
+# HOOFDSTUK 1b — DAGSELECTIE (kalender, mobiel-native)
 # ============================================================
-
-st.markdown("")
-
-def _pick_day(iso: str):
-    st.session_state["selected_date"] = iso
 
 today = date.today()
-week_start = today - timedelta(days=today.weekday())
-week_days = [week_start + timedelta(days=i) for i in range(7)]
 
-# --- WEEKSTRIP (MOBIELPROOF): 2 rijen (4 + 3)
-def _render_day_button(d: date):
-    iso = d.isoformat()
-    rec = _ensure_day(iso)
+selected_dt = st.date_input(
+    "Dag",
+    value=today,
+    max_value=today,
+    key="selected_dt",
+    label_visibility="collapsed"
+)
 
-    if rec.get("closed"):
-        dot = "🟣"       # afgesloten
-    elif iso == st.session_state["selected_date"]:
-        dot = "⬤"        # geselecteerd
-    elif d > today:
-        dot = "·"        # toekomst
-    else:
-        dot = "◯"        # open dag
-
-    label = NL_DAY_ABBR[d.weekday()]
-
-    st.button(
-        f"{label} {dot}",
-        key=f"daypick_{iso}",
-        on_click=_pick_day,
-        args=(iso,),
-        use_container_width=True
-    )
-
-row1 = week_days[:4]
-row2 = week_days[4:]
-
-cols1 = st.columns(4, gap="small")
-for i, d in enumerate(row1):
-    with cols1[i]:
-        _render_day_button(d)
-
-cols2 = st.columns(3, gap="small")
-for i, d in enumerate(row2):
-    with cols2[i]:
-        _render_day_button(d)
-
-# --- header (Vandaag/Morgen/Gisteren of datum)
-selected_dt = date.fromisoformat(st.session_state["selected_date"])
-title = format_day_title_nl(selected_dt, today)
+st.session_state["selected_date"] = selected_dt.isoformat()
 
 # ============================================================
 # DASHBOARD — CONTEXT (STRIP)
 # ============================================================
+
+title = format_day_title_nl(selected_dt, today)
 
 day_name = NL_DAY_FULL[selected_dt.weekday()]
 month_name = NL_MONTH_FULL[selected_dt.month - 1]
@@ -370,19 +333,6 @@ class FreeKcalItem:
         self.kcal = int(kcal)
         self.timestamp = datetime.now().isoformat()
 
-def format_day_title_nl(selected_dt: date, today: date) -> str:
-    delta = (selected_dt - today).days
-
-    if delta == 0:
-        return "Vandaag"
-    if delta == 1:
-        return "Morgen"
-    if delta == -1:
-        return "Gisteren"
-
-    day_name = NL_DAY_FULL[selected_dt.weekday()]
-    month_name = NL_MONTH_FULL[selected_dt.month - 1]
-    return f"{day_name} {selected_dt.day} {month_name}"
 
 @dataclass
 class ActivityItem:
