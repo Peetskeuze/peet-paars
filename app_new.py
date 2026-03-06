@@ -30,10 +30,9 @@ st.title("Peet Paars")
 # ============================================================
 
 # Richtwaarde uit startcontext
-DEFAULT_DAILY_TARGET_KCAL = 2100
+DEFAULT_DAILY_TARGET_KCAL = 1800
 
-# Programma keuze
-PROGRAMS = ["Blauw", "Paars"]
+
 
 # Weegmoment
 WEIGH_DAY = 2  # 0=ma, 1=di, 2=wo
@@ -54,12 +53,33 @@ ACTIVITY_KCAL_PER_MIN = {
 # ============================================================
 
 try:
-    from food_library_generated_v8_fixed import FOOD_LIBRARY
+    from food_library_generated_v8_2_fixed import FOOD_LIBRARY
 except Exception as e:
     FOOD_LIBRARY = {}
     raise RuntimeError(
         "FOOD_LIBRARY ontbreekt. Zet food_library_generated_v8_fixed.py naast app_new.py."
     ) from e
+
+# ============================================================
+# INGREDIENT MATCHING VIA ALIAS
+# ============================================================
+
+def find_product_by_text(text):
+    text = text.lower().strip()
+
+    for key, p in FOOD_LIBRARY.items():
+
+        # match op label
+        if text == p["label"].lower():
+            return key
+
+        # match op alias
+        if "alias" in p and text in [a.lower() for a in p["alias"]]:
+            return key
+
+    return None
+
+
 
 # ============================================================
 # HOOFDSTUK 2 — HELPERS (PURE FUNCTIES)
@@ -84,16 +104,25 @@ def format_day_title_nl(selected_dt: date, today_dt: date) -> str:
     return f"{day_name} {selected_dt.day} {month_name}"
 
 def calc_food_kcal(product_def: dict, amount: float) -> int:
+
     unit = product_def["unit"]
+
     if unit == "gram":
         return int((product_def["kcal_per_100g"] / 100.0) * amount)
+
+    if unit == "ml":
+        return int((product_def["kcal_per_100ml"] / 100.0) * amount)
+
     if unit == "cl":
         ml = amount * 10.0
         return int((product_def["kcal_per_100ml"] / 100.0) * ml)
+
     if unit == "eetlepel":
         return int(product_def["kcal_per_tbsp"] * amount)
+
     if unit == "stuk":
         return int(product_def["kcal_per_piece"] * amount)
+
     return 0
 
 def ensure_day(iso_date: str):
@@ -115,16 +144,16 @@ def sum_food_kcal(day_rec: dict) -> int:
 def sum_activity_kcal(day_rec: dict) -> int:
     return int(sum(item.get("kcal", 0) for item in day_rec.get("activity_items", [])))
 
-def coach_line(program: str, eaten: int, burned: int, net: int, target: int) -> str:
-    # Coachend, direct, geen WW marketingtaal
+def coach_line(eaten, burned, net, target):
+
     if eaten == 0 and burned == 0:
-        return f"{program}: start rustig. Eiwit eerst, groente als volume. Vet en saus zijn een bewuste keuze."
+        return "Start rustig. Eiwit eerst, groente als volume."
+
     if net <= target:
-        return f"{program}: netjes. Blijf bij eiwit en volume. Als je nog iets pakt, kies slim en houd vet onder controle."
+        return "Je zit onder je dagdoel. Prima koers."
+
     over = net - target
-    # Sportcompensatie in kcal: +250 kcal -> ~30-40 min extra beweging (vuistregel)
-    est_min = int(max(20, min(90, (over / 250.0) * 35)))
-    return f"{program}: je zit erover (+{int(over)} kcal). Concreet: schrap 1 vetmoment of compenseer met ±{est_min} min extra beweging."
+    return f"Je zit {over} kcal boven je dagdoel. Compenseer met beweging of eet lichter."
 
 def make_recipe_stub(meal_type: str, program: str) -> dict:
     # STABIEL: geen LLM. Dit is een tijdelijke, gecontroleerde generator.
@@ -270,56 +299,153 @@ st.markdown(f"### {title}")
 st.caption(sub)
 
 c1, c2 = st.columns([1, 1])
-with c1:
-    program = st.selectbox("Programma", PROGRAMS, index=PROGRAMS.index(day_rec.get("program", "Paars")), disabled=day_closed)
-with c2:
-    target_kcal = st.number_input("Richtwaarde (kcal)", min_value=1200, max_value=3500, step=50, value=int(day_rec.get("target_kcal", DEFAULT_DAILY_TARGET_KCAL)), disabled=day_closed)
 
-day_rec["program"] = program
+with c1:
+    target_kcal = st.number_input(
+        "Dagdoel kcal",
+        min_value=1200,
+        max_value=3500,
+        step=50,
+        value=int(day_rec.get("target_kcal", DEFAULT_DAILY_TARGET_KCAL)),
+        disabled=day_closed
+    )
+
 day_rec["target_kcal"] = int(target_kcal)
 
-st.markdown("---")
+program = day_rec.get("program", "Paars")
 
 # ============================================================
-# HOOFDSTUK 7 — HERO (TUSSENSTAND + INDICATIEVE PUNTEN)
+# HOOFDSTUK 7 — DASHBOARD (COMPACT)
 # ============================================================
 
 eaten_kcal = sum_food_kcal(day_rec)
 burned_kcal = sum_activity_kcal(day_rec)
 netto_kcal = int(eaten_kcal - burned_kcal)
 
-# Indicatieve punten (ruwe, transparante schatting)
-# 1 punt ≈ 60 kcal (geen officiële WW-formule)
-estimated_points = max(0, int(round(netto_kcal / 60.0)))
+balance = netto_kcal - int(target_kcal)
 
-st.markdown("### Tussenstand")
+st.markdown("### Dagdashboard")
 
-st.markdown(
-    f"""
-    <div style="padding:14px 0;">
-        <div style="font-size:42px; font-weight:700;">
-            {netto_kcal} kcal
-        </div>
-        <div style="font-size:16px; font-weight:500; margin-top:4px;">
-            ≈ {estimated_points} punten (indicatief)
-        </div>
-        <div style="font-size:14px; opacity:0.7; margin-top:6px;">
-            {eaten_kcal} gegeten · {burned_kcal} verbrand
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        "Dagdoel",
+        int(target_kcal)
+    )
+
+with col2:
+    st.metric(
+        "Gegeten",
+        int(eaten_kcal)
+    )
+
+with col3:
+    st.metric(
+        "Bewogen",
+        int(burned_kcal)
+    )
+
+with col4:
+    st.metric(
+        "Netto",
+        int(netto_kcal)
+    )
+
+# ------------------------------------------------------------
+# Coach feedback
+# ------------------------------------------------------------
+
+if balance <= 0:
+    st.success(f"{balance:+} kcal t.o.v. dagdoel")
+else:
+    st.warning(f"{balance:+} kcal boven dagdoel")
 
 st.caption(
     coach_line(
-        program=program,
         eaten=eaten_kcal,
         burned=burned_kcal,
         net=netto_kcal,
         target=int(target_kcal),
     )
 )
+
+st.caption(f"Dagdoel: {target_kcal} kcal")
+
+st.caption(
+    coach_line(
+        eaten=eaten_kcal,
+        burned=burned_kcal,
+        net=netto_kcal,
+        target=int(target_kcal),
+    )
+)
+
+# ============================================================
+# HOOFDSTUK 7b — WEEK KOERS
+# ============================================================
+
+today_dt = date.today()
+week_start = today_dt - timedelta(days=today_dt.weekday())
+
+week_balance = 0
+days_counted = 0
+
+for iso_day, d in st.session_state.get("days", {}).items():
+
+    d_date = date.fromisoformat(iso_day)
+
+    if d_date >= week_start and d_date <= today_dt:
+
+        eaten = sum_food_kcal(d)
+        burned = sum_activity_kcal(d)
+
+        target = int(d.get("target_kcal", DEFAULT_DAILY_TARGET_KCAL))
+
+        net = eaten - burned
+
+        week_balance += net - target
+        days_counted += 1
+
+
+st.markdown("---")
+st.markdown("### Week koers")
+
+if days_counted == 0:
+
+    st.caption("Nog geen dagen geregistreerd deze week.")
+
+else:
+
+    if week_balance <= 0:
+        st.success(f"{week_balance:+} kcal deze week")
+        st.caption("Je week ligt op koers.")
+
+    else:
+        st.warning(f"{week_balance:+} kcal deze week")
+        st.caption("Een paar lichtere keuzes brengen je weer op koers.")
+
+# ============================================================
+# QUICK ACTIONS (SNELLE KNOPPEN)
+# ============================================================
+
+st.markdown("---")
+st.subheader("Acties")
+
+a1, a2, a3 = st.columns(3)
+
+with a1:
+    if st.button("🍽️ Eten toevoegen"):
+        st.session_state["open_food"] = True
+
+with a2:
+    if st.button("🏃 Beweging toevoegen"):
+        st.session_state["open_activity"] = True
+
+with a3:
+    if st.button("📊 Naar overzicht"):
+        st.session_state["scroll_overview"] = True
+
 
 # ============================================================
 # HOOFDSTUK 8 — ACTIES (ETEN + EIGEN PRODUCT + BEWEGING) — FIXED UX
@@ -333,31 +459,71 @@ with st.expander("➕ Eten toevoegen", expanded=False):
     if day_closed:
         st.info("Deze dag is afgesloten. Nieuwe invoer is niet meer mogelijk.")
 
+    # ------------------------------------------------------------
+    # Product lijst
+    # ------------------------------------------------------------
+
     food_keys = list(FOOD_LIBRARY.keys())
+
+    if not food_keys:
+        st.warning("Geen ingrediënten gevonden.")
+        st.stop()
+
     food_labels = [FOOD_LIBRARY[k]["label"] for k in food_keys]
 
     selected_label = st.selectbox(
         "Product",
         food_labels,
+        key="food_select",
         disabled=day_closed
     )
 
     selected_key = food_keys[food_labels.index(selected_label)]
     p = FOOD_LIBRARY[selected_key]
+
     unit = str(p.get("unit", "gram")).lower()
+
+# ------------------------------------------------------------
+# Snelle porties voor drank
+# ------------------------------------------------------------
+
+if unit == "ml":
+
+    quick_cols = st.columns(3)
+
+    with quick_cols[0]:
+        if st.button("🍺 250 ml", disabled=day_closed):
+            amount = 250.0
+
+    with quick_cols[1]:
+        if st.button("🍺 330 ml", disabled=day_closed):
+            amount = 330.0
+
+    with quick_cols[2]:
+        if st.button("🍺 500 ml", disabled=day_closed):
+            amount = 500.0
 
     st.caption(f"Eenheid: {unit}")
 
-    # Default hoeveelheid op basis van standaardportie (als die bestaat)
+    # ------------------------------------------------------------
+    # Default hoeveelheid
+    # ------------------------------------------------------------
+
     default_amount = 0.0
-    if unit == "gram" and p.get("std_portion_g") is not None:
+
+    if unit == "gram" and p.get("std_portion_g"):
         default_amount = float(p["std_portion_g"])
-    elif unit == "ml" and p.get("std_portion_ml") is not None:
+
+    elif unit == "ml" and p.get("std_portion_ml"):
         default_amount = float(p["std_portion_ml"])
-    elif unit == "cl" and p.get("std_portion_cl") is not None:
+
+    elif unit == "cl" and p.get("std_portion_cl"):
         default_amount = float(p["std_portion_cl"])
 
-    # UI input per unit
+    # ------------------------------------------------------------
+    # Input per unit
+    # ------------------------------------------------------------
+
     if unit == "gram":
         amount = st.number_input(
             "Hoeveelheid (gram)",
@@ -366,6 +532,7 @@ with st.expander("➕ Eten toevoegen", expanded=False):
             value=default_amount,
             disabled=day_closed
         )
+
     elif unit == "ml":
         amount = st.number_input(
             "Hoeveelheid (ml)",
@@ -374,6 +541,7 @@ with st.expander("➕ Eten toevoegen", expanded=False):
             value=default_amount,
             disabled=day_closed
         )
+
     elif unit == "cl":
         amount = st.number_input(
             "Hoeveelheid (cl)",
@@ -382,8 +550,8 @@ with st.expander("➕ Eten toevoegen", expanded=False):
             value=default_amount,
             disabled=day_closed
         )
+
     else:
-        # Als er toch iets exotisch in de library staat, vangen we dat netjes af
         amount = st.number_input(
             f"Hoeveelheid ({unit})",
             min_value=0.0,
@@ -392,28 +560,19 @@ with st.expander("➕ Eten toevoegen", expanded=False):
             disabled=day_closed
         )
 
+
+# ------------------------------------------------------------
+# Toevoegen
+# ------------------------------------------------------------
+
     if st.button("Toevoegen", key="add_food", disabled=day_closed):
 
         if amount <= 0:
             st.warning("Vul een geldige hoeveelheid in.")
             st.stop()
 
-        # Kcal berekening per unit
-        if unit == "gram":
-            kcal_per_100g = float(p.get("kcal_per_100g", 0))
-            kcal = int(round((kcal_per_100g / 100.0) * amount))
-
-        elif unit == "ml":
-            kcal_per_100ml = float(p.get("kcal_per_100ml", 0))
-            kcal = int(round((kcal_per_100ml / 100.0) * amount))
-
-        elif unit == "cl":
-            kcal_per_100ml = float(p.get("kcal_per_100ml", 0))
-            ml = amount * 10.0
-            kcal = int(round((kcal_per_100ml / 100.0) * ml))
-
-        else:
-            kcal = 0
+        # kcal berekening via centrale helper
+        kcal = calc_food_kcal(p, amount)
 
         day_rec["food_items"].append({
             "id": str(uuid.uuid4()),
@@ -422,8 +581,6 @@ with st.expander("➕ Eten toevoegen", expanded=False):
             "unit": unit,
             "kcal": int(kcal),
             "timestamp": datetime.now().isoformat(),
-            "zero_paars": bool(p.get("zero_paars", False)),
-            "zero_blauw": bool(p.get("zero_blauw", False)),
         })
 
         st.success(f"{p['label']} toegevoegd ({int(kcal)} kcal)")

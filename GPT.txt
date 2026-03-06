@@ -1,0 +1,87 @@
+BAKEN — ChatGPT Account / Workspace herstel
+
+Datum: 5 maart 2026
+Status: tijdelijk gestopt voor account reset
+
+Situatie
+
+Tijdens een poging om te upgraden naar ChatGPT Business is er een nieuwe workspace aangemaakt.
+
+Daarna:
+
+Business upgrade geannuleerd
+
+Oude chats nog even zichtbaar
+
+Workspace automatisch gedeactiveerd
+
+Nieuwe persoonlijke accountcontext aangemaakt
+
+Gevolg:
+
+Oude chats niet zichtbaar
+
+Nieuwe chats wel zichtbaar
+
+ChatGPT Plus abonnement actief
+
+Sommige settings geven 404
+
+Account zit waarschijnlijk nog gekoppeld aan oude workspace-ID
+
+Wat we nu doen
+
+Je gaat een volledige sessie reset doen.
+
+Stap 1
+
+Uitloggen via:
+
+https://chatgpt.com/logout
+
+Stap 2
+
+Alle ChatGPT tabbladen sluiten
+
+Stap 3
+
+Nieuwe login via:
+
+https://chatgpt.com
+
+Doel van deze reset
+
+Server opnieuw laten koppelen aan:
+
+Account van Peter van de Kamp (persoonlijk account)
+zonder de gedeactiveerde workspace.
+
+Bij terugkomst controleren we
+
+1️⃣ Zijn oude chats weer zichtbaar
+2️⃣ Werkt ChatGPT Plus volledig
+3️⃣ Zijn Peet-Paars gesprekken terug
+4️⃣ Werkt settings/my-plan weer zonder 404
+
+Plan B (indien nodig)
+
+Als chats nog ontbreken:
+
+OpenAI support laten:
+
+gedeactiveerde workspace heractiveren
+
+of chatdatabase opnieuw koppelen
+
+Dit is een bekende bug na Business upgrades.
+
+Herstartpunt voor volgende chat
+
+👉 Begin met de zin:
+
+“Pak baken: ChatGPT workspace herstel”
+
+Dan pakken we exact hier weer op.
+
+Rustig even alles resetten.
+Dit soort account-bugs lossen meestal op na een schone login. 🔧
