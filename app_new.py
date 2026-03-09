@@ -6,6 +6,8 @@
 import streamlit as st
 import uuid
 from datetime import datetime, date, timedelta
+import json
+from pathlib import Path
 
 # ============================================================
 # OPENAI (OPTIONEEL — VEILIG)
@@ -197,6 +199,7 @@ def ensure_day(iso_date: str):
             "program": "Paars",
             "target_kcal": DEFAULT_DAILY_TARGET_KCAL,
         }
+    save_data()
     return st.session_state["days"][iso_date]
 
 def sum_food_kcal(day_rec: dict) -> int:
@@ -237,6 +240,33 @@ def make_recipe_stub(meal_type: str, program: str) -> dict:
         "meta": {"source": "recipe_stub", "program": program, "meal_type": meal_type, "note": note},
     }
 
+# ============================================================
+# DATA OPSLAG (JSON)
+# ============================================================
+
+DATA_FILE = Path("peet_data.json")
+
+
+def load_data():
+
+    if DATA_FILE.exists():
+        try:
+            with open(DATA_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+
+    return {}
+
+
+def save_data():
+
+    try:
+        with open(DATA_FILE, "w") as f:
+            json.dump(st.session_state.get("days", {}), f)
+
+    except:
+        pass
 # ------------------------------------------------------------
 # Slimme kcal suggestie voor vrije invoer
 # ------------------------------------------------------------
@@ -292,6 +322,38 @@ if "show_weight_prompt" not in st.session_state:
 if "selected_date" not in st.session_state:
     st.session_state["selected_date"] = date.today().isoformat()
 
+if "days" not in st.session_state:
+    st.session_state["days"] = load_data()
+
+# ============================================================
+# 3.1 DATA OPSLAG (AUTOSAVE JSON)
+# ============================================================
+
+import json
+from pathlib import Path
+
+DATA_FILE = Path("peet_data.json")
+
+def load_data():
+    if DATA_FILE.exists():
+        try:
+            with open(DATA_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_data():
+    try:
+        with open(DATA_FILE, "w") as f:
+            json.dump(st.session_state.get("days", {}), f)
+    except:
+        pass
+
+# bij start laden
+if "days" not in st.session_state:
+    st.session_state["days"] = load_data()
+
 # ============================================================
 # HOOFDSTUK 4 — WEIGHT PROMPT (1x PER WEEK OP WO)
 # ============================================================
@@ -324,11 +386,13 @@ if st.session_state["show_weight_prompt"]:
             })
             st.session_state["last_weight_prompt_week"] = int(current_week)
             st.session_state["show_weight_prompt"] = False
+            save_data()
             st.rerun()
     with c2:
         if st.button("Overslaan", key="skip_weight"):
             st.session_state["last_weight_prompt_week"] = int(current_week)
             st.session_state["show_weight_prompt"] = False
+            save_data()
             st.rerun()
 
     st.markdown("---")
@@ -486,60 +550,63 @@ else:
 # 8.0 — SNELLE INVOER (MOBILE FAST ENTRY)
 # ------------------------------------------------------------
 
-    st.markdown("### ⚡ Snelle invoer")
+st.markdown("### ⚡ Snelle invoer")
 
-    quick_text = st.text_input(
-        "Typ bijvoorbeeld: 150 kipfilet",
-        key="quick_food_input",
-        disabled=day_closed
-    )
+quick_text = st.text_input(
+    "Typ bijvoorbeeld: 150 kipfilet",
+    key="quick_food_input",
+    disabled=day_closed
+)
 
-    if st.button("Toevoegen via tekst", disabled=day_closed):
+if st.button("Toevoegen via tekst", disabled=day_closed):
 
-        if not quick_text:
-            st.warning("Voer iets in.")
-        
-        else:
+    if not quick_text:
+        st.warning("Voer iets in.")
 
-            parts = quick_text.split(" ", 1)
+    else:
+
+        entries = quick_text.split("+")
+        added = 0
+
+        for entry in entries:
+
+            entry = entry.strip()
+            parts = entry.split(" ", 1)
 
             if len(parts) != 2:
-                st.warning("Gebruik formaat: hoeveelheid product")
-            
-            else:
+                continue
 
-                try:
-                    amount = float(parts[0])
-                except:
-                    st.warning("Hoeveelheid moet een getal zijn.")
-                    amount = None
+            try:
+                amount = float(parts[0])
+            except:
+                continue
 
-                if amount is not None:
+            product_text = parts[1].strip()
+            key = find_product_by_text(product_text)
 
-                    product_text = parts[1].strip()
+            if not key:
+                continue
 
-                    key = find_product_by_text(product_text)
+            p = FOOD_LIBRARY[key]
+            kcal = calc_food_kcal(p, amount)
 
-                    if not key:
-                        st.warning("Product niet gevonden. Probeer bv: kipfilet, olie, yoghurt.")
-                    
-                    else:
+            day_rec["food_items"].append({
+                "id": str(uuid.uuid4()),
+                "product": p["label"],
+                "amount": amount,
+                "unit": p.get("unit", "gram"),
+                "kcal": kcal,
+                "timestamp": datetime.now().isoformat(),
+            })
 
-                        p = FOOD_LIBRARY[key]
+            added += 1
 
-                        kcal = calc_food_kcal(p, amount)
-
-                        day_rec["food_items"].append({
-                            "id": str(uuid.uuid4()),
-                            "product": p["label"],
-                            "amount": amount,
-                            "unit": p.get("unit", "gram"),
-                            "kcal": kcal,
-                            "timestamp": datetime.now().isoformat(),
-                        })
-
-                        st.success(f"{p['label']} toegevoegd ({kcal} kcal)")
-                        st.rerun()
+        if added > 0:
+            st.success(f"{added} product(en) toegevoegd")
+            save_data()
+            st.rerun()
+        else:
+            st.warning("Geen herkenbare producten gevonden.")
 # ------------------------------------------------------------
 # 8.1 — Product uit FOOD_LIBRARY toevoegen (UNIT-PROOF)
 # ------------------------------------------------------------
@@ -683,6 +750,7 @@ with st.expander("➕ Eten toevoegen", expanded=False):
         })
 
         st.success(f"{p['label']} toegevoegd ({int(kcal)} kcal)")
+        save_data()
         st.rerun()
 # ------------------------------------------------------------
 # 8.3 — Beweging toevoegen
@@ -722,6 +790,7 @@ with st.expander("➕ Beweging toevoegen", expanded=False):
             })
 
             st.success(f"{activity.capitalize()} toegevoegd ({int(kcal)} kcal)")
+            save_data()
             st.rerun()
 # ============================================================
 # HOOFDSTUK 8b — RECEPT GENERATOR (PROMPT-BASED, STABIEL)
@@ -943,11 +1012,13 @@ c1, c2 = st.columns(2)
 with c1:
     if st.button("🟣 Genereer lunch", disabled=day_closed):
         st.session_state["pending_recipe"] = generate_recipe_item("Lunch", program, remaining_kcal)
+        save_data()
         st.rerun()
 
 with c2:
     if st.button("🟣 Genereer diner", disabled=day_closed):
         st.session_state["pending_recipe"] = generate_recipe_item("Diner", program, remaining_kcal)
+        save_data()
         st.rerun()
 
 pending = st.session_state.get("pending_recipe")
@@ -977,11 +1048,13 @@ if pending:
             day_rec["food_items"].append(pending)
             st.session_state["pending_recipe"] = None
             st.success("Recept toegevoegd aan je dag.")
+            save_data()
             st.rerun()
 
     with col_b:
         if st.button("❌ Verwerp", disabled=day_closed):
             st.session_state["pending_recipe"] = None
+            save_data()
             st.rerun()
 
 # ============================================================
@@ -1006,6 +1079,7 @@ else:
         with cols[1]:
             if st.button("Verwijder", key=f"del_food_{item['id']}", disabled=day_closed):
                 day_rec["food_items"] = [x for x in day_rec["food_items"] if x.get("id") != item.get("id")]
+                save_data()
                 st.rerun()
         total_food += int(item.get("kcal", 0))
 
@@ -1027,6 +1101,7 @@ else:
         with cols[1]:
             if st.button("Verwijder", key=f"del_act_{item['id']}", disabled=day_closed):
                 day_rec["activity_items"] = [x for x in day_rec["activity_items"] if x.get("id") != item.get("id")]
+                save_data()
                 st.rerun()
         total_act += int(item.get("kcal", 0))
 
@@ -1044,6 +1119,7 @@ if not day_closed:
     if st.button("🟣 Einde van de dag"):
         day_rec["closed"] = True
         st.success("Dag vastgezet.")
+        save_data()
         st.rerun()
 else:
     st.info("Deze dag is afgesloten. Nieuwe invoer is uitgeschakeld.")
