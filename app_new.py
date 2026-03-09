@@ -26,6 +26,29 @@ st.set_page_config(page_title="Peet Paars", layout="centered")
 st.title("Peet Paars")
 st.write("PEET TEST BUILD 2")
 
+st.markdown("""
+<style>
+
+.block-container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+h1, h2, h3 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.stMetric {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 # ============================================================
 # HOOFDSTUK 1 — CANON SETTINGS (LEIDEND)
 # ============================================================
@@ -367,22 +390,17 @@ balance = netto_kcal - int(target_kcal)
 # ------------------------------------------------------------
 st.markdown("### Dagdashboard")
 
-row1_col1, row1_col2 = st.columns(2)
+st.metric("Netto kcal", int(netto_kcal))
 
-with row1_col1:
-    st.metric("Doel", int(target_kcal))
+col1, col2 = st.columns(2)
 
-with row1_col2:
+with col1:
     st.metric("Gegeten", int(eaten_kcal))
 
-
-row2_col1, row2_col2 = st.columns(2)
-
-with row2_col1:
+with col2:
     st.metric("Bewogen", int(burned_kcal))
 
-with row2_col2:
-    st.metric("Netto", int(netto_kcal))
+st.metric("Dagdoel", int(target_kcal))
 # ------------------------------------------------------------
 # Coach feedback
 # ------------------------------------------------------------
