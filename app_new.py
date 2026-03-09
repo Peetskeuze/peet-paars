@@ -852,15 +852,12 @@ Geef alleen JSON in dit formaat:
     model_out = None
 
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
         response = client.responses.create(
             model="gpt-4o-mini",
             input=prompt
         )
-
-        st.write("FULL RESPONSE OBJECT:")
-        st.write(response)
 
         raw = getattr(response, "output_text", None)
 
