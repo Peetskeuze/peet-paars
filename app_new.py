@@ -846,12 +846,14 @@ Geef alleen JSON in dit formaat:
     model_out = None
 
 
-    # ---------------------------------------------------------
-    # echte OpenAI call
-    # ---------------------------------------------------------
+# ---------------------------------------------------------
+# echte OpenAI call
+# ---------------------------------------------------------
+
     model_out = None
 
     try:
+
         client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
         response = client.responses.create(
@@ -861,34 +863,39 @@ Geef alleen JSON in dit formaat:
 
         raw = getattr(response, "output_text", None)
 
-        st.write("RAW OUTPUT_TEXT:")
-        st.write(raw)
-
         import json
         import re
 
         if raw:
 
-            # verwijder eventuele markdown codeblokken
+            # markdown codeblokken verwijderen
             cleaned = raw.replace("```json", "").replace("```", "").strip()
 
+            # JSON object zoeken
             match = re.search(r"\{.*\}", cleaned, re.DOTALL)
 
             if match:
+
                 try:
                     model_out = json.loads(match.group())
-                except Exception as e:
-                    st.error("JSON kon niet worden gelezen uit AI antwoord.")
+
+                except Exception:
+                    st.error("AI gaf JSON terug maar die kon niet worden gelezen.")
                     st.write(cleaned)
                     st.stop()
+
             else:
-                st.error("Geen JSON-object gevonden in AI antwoord.")
+                st.error("AI antwoord bevatte geen JSON-object.")
                 st.write(cleaned)
                 st.stop()
 
         else:
             st.error("AI gaf geen output_text terug.")
             st.stop()
+
+    except Exception as e:
+        st.error(f"OpenAI fout: {e}")
+        st.stop()
 
     # ---------------------------------------------------------
     # GEEN fallback tijdens debug
