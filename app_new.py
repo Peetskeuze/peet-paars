@@ -360,7 +360,8 @@ remaining_kcal = int(target_kcal) - int(eaten_kcal) + int(burned_kcal)
 
 st.markdown("### Dagdashboard")
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
+col3, col4 = st.columns(2)
 
 with col1:
     st.metric(
@@ -454,6 +455,59 @@ else:
 # ============================================================
 # HOOFDSTUK 8 — ACTIES (ETEN + EIGEN PRODUCT + BEWEGING)
 # ============================================================
+# ------------------------------------------------------------
+# 8.0 — SNELLE INVOER (MOBILE FAST ENTRY)
+# ------------------------------------------------------------
+
+    st.markdown("### ⚡ Snelle invoer")
+
+    quick_text = st.text_input(
+        "Typ bijvoorbeeld: 150 kipfilet",
+        key="quick_food_input",
+        disabled=day_closed
+    )
+
+    if st.button("Toevoegen via tekst", disabled=day_closed):
+
+        if not quick_text:
+            st.warning("Voer iets in.")
+            st.stop()
+
+        parts = quick_text.split(" ", 1)
+
+        if len(parts) != 2:
+            st.warning("Gebruik formaat: hoeveelheid product")
+            st.stop()
+
+        try:
+            amount = float(parts[0])
+        except:
+            st.warning("Hoeveelheid moet een getal zijn.")
+            st.stop()
+
+        product_text = parts[1].strip()
+
+        key = find_product_by_text(product_text)
+
+        if not key:
+            st.warning("Product niet gevonden in FOOD_LIBRARY.")
+            st.stop()
+
+        p = FOOD_LIBRARY[key]
+
+        kcal = calc_food_kcal(p, amount)
+
+        day_rec["food_items"].append({
+            "id": str(uuid.uuid4()),
+            "product": p["label"],
+            "amount": amount,
+            "unit": p.get("unit", "gram"),
+            "kcal": kcal,
+            "timestamp": datetime.now().isoformat(),
+        })
+
+        st.success(f"{p['label']} toegevoegd ({kcal} kcal)")
+        st.rerun()
 # ------------------------------------------------------------
 # 8.1 — Product uit FOOD_LIBRARY toevoegen (UNIT-PROOF)
 # ------------------------------------------------------------
