@@ -104,7 +104,17 @@ def find_product_by_text(text: str):
 
     text_clean = text.lower().strip()
 
-    return FOOD_ALIAS_INDEX.get(text_clean)
+    # 1️⃣ exacte match
+    key = FOOD_ALIAS_INDEX.get(text_clean)
+    if key:
+        return key
+
+    # 2️⃣ gedeeltelijke match (bv: "melk" → "volle melk")
+    for alias, k in FOOD_ALIAS_INDEX.items():
+        if text_clean in alias:
+            return k
+
+    return None
 
 # ============================================================
 # HOOFDSTUK 2 — HELPERS (PURE FUNCTIES)
@@ -355,38 +365,24 @@ balance = netto_kcal - int(target_kcal)
 # ------------------------------------------------------------
 # Resterend kcal budget voor AI
 # ------------------------------------------------------------
-
-remaining_kcal = int(target_kcal) - int(eaten_kcal) + int(burned_kcal)
-
 st.markdown("### Dagdashboard")
 
-col1, col2 = st.columns(2)
-col3, col4 = st.columns(2)
+row1_col1, row1_col2 = st.columns(2)
 
-with col1:
-    st.metric(
-        "Dagdoel",
-        int(target_kcal)
-    )
+with row1_col1:
+    st.metric("Doel", int(target_kcal))
 
-with col2:
-    st.metric(
-        "Gegeten",
-        int(eaten_kcal)
-    )
+with row1_col2:
+    st.metric("Gegeten", int(eaten_kcal))
 
-with col3:
-    st.metric(
-        "Bewogen",
-        int(burned_kcal)
-    )
 
-with col4:
-    st.metric(
-        "Netto",
-        int(netto_kcal)
-    )
+row2_col1, row2_col2 = st.columns(2)
 
+with row2_col1:
+    st.metric("Bewogen", int(burned_kcal))
+
+with row2_col2:
+    st.metric("Netto", int(netto_kcal))
 # ------------------------------------------------------------
 # Coach feedback
 # ------------------------------------------------------------
@@ -471,43 +467,48 @@ else:
 
         if not quick_text:
             st.warning("Voer iets in.")
-            st.stop()
+        
+        else:
 
-        parts = quick_text.split(" ", 1)
+            parts = quick_text.split(" ", 1)
 
-        if len(parts) != 2:
-            st.warning("Gebruik formaat: hoeveelheid product")
-            st.stop()
+            if len(parts) != 2:
+                st.warning("Gebruik formaat: hoeveelheid product")
+            
+            else:
 
-        try:
-            amount = float(parts[0])
-        except:
-            st.warning("Hoeveelheid moet een getal zijn.")
-            st.stop()
+                try:
+                    amount = float(parts[0])
+                except:
+                    st.warning("Hoeveelheid moet een getal zijn.")
+                    amount = None
 
-        product_text = parts[1].strip()
+                if amount is not None:
 
-        key = find_product_by_text(product_text)
+                    product_text = parts[1].strip()
 
-        if not key:
-            st.warning("Product niet gevonden in FOOD_LIBRARY.")
-            st.stop()
+                    key = find_product_by_text(product_text)
 
-        p = FOOD_LIBRARY[key]
+                    if not key:
+                        st.warning("Product niet gevonden. Probeer bv: kipfilet, olie, yoghurt.")
+                    
+                    else:
 
-        kcal = calc_food_kcal(p, amount)
+                        p = FOOD_LIBRARY[key]
 
-        day_rec["food_items"].append({
-            "id": str(uuid.uuid4()),
-            "product": p["label"],
-            "amount": amount,
-            "unit": p.get("unit", "gram"),
-            "kcal": kcal,
-            "timestamp": datetime.now().isoformat(),
-        })
+                        kcal = calc_food_kcal(p, amount)
 
-        st.success(f"{p['label']} toegevoegd ({kcal} kcal)")
-        st.rerun()
+                        day_rec["food_items"].append({
+                            "id": str(uuid.uuid4()),
+                            "product": p["label"],
+                            "amount": amount,
+                            "unit": p.get("unit", "gram"),
+                            "kcal": kcal,
+                            "timestamp": datetime.now().isoformat(),
+                        })
+
+                        st.success(f"{p['label']} toegevoegd ({kcal} kcal)")
+                        st.rerun()
 # ------------------------------------------------------------
 # 8.1 — Product uit FOOD_LIBRARY toevoegen (UNIT-PROOF)
 # ------------------------------------------------------------
