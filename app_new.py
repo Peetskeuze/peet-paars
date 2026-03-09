@@ -868,19 +868,28 @@ Geef alleen JSON in dit formaat:
         import re
 
         if raw:
-            match = re.search(r"\{.*\}", raw, re.DOTALL)
+
+            # verwijder eventuele markdown codeblokken
+            cleaned = raw.replace("```json", "").replace("```", "").strip()
+
+            match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+
             if match:
-                model_out = json.loads(match.group())
+                try:
+                    model_out = json.loads(match.group())
+                except Exception as e:
+                    st.error("JSON kon niet worden gelezen uit AI antwoord.")
+                    st.write(cleaned)
+                    st.stop()
             else:
-                st.error("Geen JSON-object gevonden in output_text")
+                st.error("Geen JSON-object gevonden in AI antwoord.")
+                st.write(cleaned)
                 st.stop()
+
         else:
-            st.error("output_text is leeg of None")
+            st.error("AI gaf geen output_text terug.")
             st.stop()
 
-    except Exception as e:
-        st.error(f"OpenAI fout: {e}")
-        st.stop()
     # ---------------------------------------------------------
     # GEEN fallback tijdens debug
     # ---------------------------------------------------------
