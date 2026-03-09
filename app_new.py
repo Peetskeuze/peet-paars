@@ -388,6 +388,19 @@ balance = netto_kcal - int(target_kcal)
 # ------------------------------------------------------------
 # Resterend kcal budget voor AI
 # ------------------------------------------------------------
+# ------------------------------------------------------------
+# Resterend kcal budget voor AI
+# ------------------------------------------------------------
+
+remaining_kcal = int(target_kcal) - int(eaten_kcal) + int(burned_kcal)
+
+if remaining_kcal < 0:
+    remaining_kcal = 0
+
+#---------------------------------------------------------------
+# Dagdashboard
+#---------------------------------------------------------------
+
 st.markdown("### Dagdashboard")
 
 st.metric("Netto kcal", int(netto_kcal))
@@ -715,8 +728,6 @@ with st.expander("➕ Beweging toevoegen", expanded=False):
 # ============================================================
 
 def generate_recipe_item(meal_type: str, program: str, remaining_kcal: int) -> dict:
-
-
 
     # ---------------------------------------------------------
     # kcal bandbreedte
