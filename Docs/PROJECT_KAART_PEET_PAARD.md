@@ -306,3 +306,71 @@ peet-paars
 │
 └── data
     └── food_library.xlsx
+
+📍 Baken – Peet Paars (einde sessie 6 maart)
+
+Status: stabiel punt om morgen verder te bouwen.
+
+Wat vandaag gelukt is
+
+Streamlit app draait lokaal zonder crashes
+
+Compact dashboard bovenaan werkt
+
+Git push naar GitHub gelukt
+
+OpenAI integratie werkt
+
+API-key probleem (401) opgelost
+
+AI lunch / diner generator werkt in de app
+
+JSON output wordt correct verwerkt
+
+Fallback recepten werken als safety
+
+Wat nog open staat
+
+Eten toevoegen blok
+
+product zoeken werkt
+
+selecteren / hoeveelheid invoeren blokkeert waarschijnlijk door
+
+day_closed
+disabled=True
+
+Peet slimmer maken
+
+dinerkeuze op basis van dagbalans
+
+licht diner
+normaal diner
+rijk diner
+
+Code opschonen
+
+debug prints verwijderen
+
+AI blok stabiliseren
+
+Projectstatus
+
+Peet Paars is nu feitelijk:
+
+v0.8 – werkende AI voedingsapp
+
+met:
+
+kcal dashboard
+
+eten registreren
+
+beweging registreren
+
+AI lunch/diner voorstellen
+
+Dat is al een sterke basis.
+
+Rustig afsluiten nu.
+Morgen pakken we eerst het “eten toevoegen” blok — dat is waarschijnlijk snel

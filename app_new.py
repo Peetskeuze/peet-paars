@@ -24,20 +24,31 @@ except Exception:
 
 st.set_page_config(page_title="Peet Paars", layout="centered")
 st.title("Peet Paars")
+st.write("PEET TEST BUILD 2")
 
 # ============================================================
 # HOOFDSTUK 1 — CANON SETTINGS (LEIDEND)
 # ============================================================
 
-# Richtwaarde uit startcontext
+# ------------------------------------------------------------
+# Dagdoel energie (basisinstelling)
+# ------------------------------------------------------------
+
 DEFAULT_DAILY_TARGET_KCAL = 1800
 
 
+# ------------------------------------------------------------
+# Weegmoment (0 = maandag)
+# ------------------------------------------------------------
 
-# Weegmoment
-WEIGH_DAY = 2  # 0=ma, 1=di, 2=wo
+WEIGH_DAY = 2   # woensdag
 
-# Activiteiten (kcal per minuut, grove schatting)
+
+# ------------------------------------------------------------
+# Activiteiten energieverbruik
+# kcal per minuut (ruwe richtwaarden)
+# ------------------------------------------------------------
+
 ACTIVITY_KCAL_PER_MIN = {
     "wandelen": 4,
     "fietsen": 8,
@@ -48,6 +59,7 @@ ACTIVITY_KCAL_PER_MIN = {
     "sport algemeen": 6,
 }
 
+
 # ============================================================
 # HOOFDSTUK 1B — FOOD_LIBRARY (AUTO-GENERATED v8, LEIDEND)
 # ============================================================
@@ -57,29 +69,42 @@ try:
 except Exception as e:
     FOOD_LIBRARY = {}
     raise RuntimeError(
-        "FOOD_LIBRARY ontbreekt. Zet food_library_generated_v8_fixed.py naast app_new.py."
+        "FOOD_LIBRARY ontbreekt. Zet food_library_generated_v8_2_fixed.py naast app_new.py."
     ) from e
 
+
 # ============================================================
-# INGREDIENT MATCHING VIA ALIAS
+# FOOD ALIAS INDEX (SNELLE PRODUCT ZOEKER)
 # ============================================================
 
-def find_product_by_text(text):
-    text = text.lower().strip()
+FOOD_ALIAS_INDEX = {}
 
-    for key, p in FOOD_LIBRARY.items():
+for key, prod in FOOD_LIBRARY.items():
 
-        # match op label
-        if text == p["label"].lower():
-            return key
+    # label indexeren
+    label = prod.get("label", "").lower().strip()
 
-        # match op alias
-        if "alias" in p and text in [a.lower() for a in p["alias"]]:
-            return key
+    if label:
+        FOOD_ALIAS_INDEX[label] = key
 
-    return None
+    # alias indexeren
+    for alias in prod.get("alias", []):
+        alias_clean = alias.lower().strip()
+        FOOD_ALIAS_INDEX[alias_clean] = key
 
 
+# ------------------------------------------------------------
+# Product zoeken op tekst (label of alias)
+# ------------------------------------------------------------
+
+def find_product_by_text(text: str):
+
+    if not text:
+        return None
+
+    text_clean = text.lower().strip()
+
+    return FOOD_ALIAS_INDEX.get(text_clean)
 
 # ============================================================
 # HOOFDSTUK 2 — HELPERS (PURE FUNCTIES)
@@ -105,23 +130,26 @@ def format_day_title_nl(selected_dt: date, today_dt: date) -> str:
 
 def calc_food_kcal(product_def: dict, amount: float) -> int:
 
-    unit = product_def["unit"]
+    unit = product_def.get("unit")
 
     if unit == "gram":
-        return int((product_def["kcal_per_100g"] / 100.0) * amount)
+        kcal100 = product_def.get("kcal_per_100g", 0)
+        return int((kcal100 / 100.0) * amount)
 
     if unit == "ml":
-        return int((product_def["kcal_per_100ml"] / 100.0) * amount)
+        kcal100 = product_def.get("kcal_per_100ml", 0)
+        return int((kcal100 / 100.0) * amount)
 
     if unit == "cl":
-        ml = amount * 10.0
-        return int((product_def["kcal_per_100ml"] / 100.0) * ml)
+        kcal100 = product_def.get("kcal_per_100ml", 0)
+        ml = amount * 10
+        return int((kcal100 / 100.0) * ml)
 
     if unit == "eetlepel":
-        return int(product_def["kcal_per_tbsp"] * amount)
+        return int(product_def.get("kcal_per_tbsp", 0) * amount)
 
     if unit == "stuk":
-        return int(product_def["kcal_per_piece"] * amount)
+        return int(product_def.get("kcal_per_piece", 0) * amount)
 
     return 0
 
@@ -324,6 +352,12 @@ netto_kcal = int(eaten_kcal - burned_kcal)
 
 balance = netto_kcal - int(target_kcal)
 
+# ------------------------------------------------------------
+# Resterend kcal budget voor AI
+# ------------------------------------------------------------
+
+remaining_kcal = int(target_kcal) - int(eaten_kcal) + int(burned_kcal)
+
 st.markdown("### Dagdashboard")
 
 col1, col2, col3, col4 = st.columns(4)
@@ -372,15 +406,6 @@ st.caption(
 
 st.caption(f"Dagdoel: {target_kcal} kcal")
 
-st.caption(
-    coach_line(
-        eaten=eaten_kcal,
-        burned=burned_kcal,
-        net=netto_kcal,
-        target=int(target_kcal),
-    )
-)
-
 # ============================================================
 # HOOFDSTUK 7b — WEEK KOERS
 # ============================================================
@@ -425,30 +450,9 @@ else:
         st.warning(f"{week_balance:+} kcal deze week")
         st.caption("Een paar lichtere keuzes brengen je weer op koers.")
 
-# ============================================================
-# QUICK ACTIONS (SNELLE KNOPPEN)
-# ============================================================
-
-st.markdown("---")
-st.subheader("Acties")
-
-a1, a2, a3 = st.columns(3)
-
-with a1:
-    if st.button("🍽️ Eten toevoegen"):
-        st.session_state["open_food"] = True
-
-with a2:
-    if st.button("🏃 Beweging toevoegen"):
-        st.session_state["open_activity"] = True
-
-with a3:
-    if st.button("📊 Naar overzicht"):
-        st.session_state["scroll_overview"] = True
-
 
 # ============================================================
-# HOOFDSTUK 8 — ACTIES (ETEN + EIGEN PRODUCT + BEWEGING) — FIXED UX
+# HOOFDSTUK 8 — ACTIES (ETEN + EIGEN PRODUCT + BEWEGING)
 # ============================================================
 # ------------------------------------------------------------
 # 8.1 — Product uit FOOD_LIBRARY toevoegen (UNIT-PROOF)
@@ -459,26 +463,24 @@ with st.expander("➕ Eten toevoegen", expanded=False):
     if day_closed:
         st.info("Deze dag is afgesloten. Nieuwe invoer is niet meer mogelijk.")
 
-    # ------------------------------------------------------------
-    # Product lijst
-    # ------------------------------------------------------------
+# ------------------------------------------------------------
+# Product selectie
+# ------------------------------------------------------------
 
-    food_keys = list(FOOD_LIBRARY.keys())
+    food_options = {v["label"]: k for k, v in FOOD_LIBRARY.items()}
 
-    if not food_keys:
+    if not food_options:
         st.warning("Geen ingrediënten gevonden.")
         st.stop()
 
-    food_labels = [FOOD_LIBRARY[k]["label"] for k in food_keys]
-
     selected_label = st.selectbox(
         "Product",
-        food_labels,
+        sorted(food_options.keys()),
         key="food_select",
         disabled=day_closed
     )
 
-    selected_key = food_keys[food_labels.index(selected_label)]
+    selected_key = food_options[selected_label]
     p = FOOD_LIBRARY[selected_key]
 
     unit = str(p.get("unit", "gram")).lower()
@@ -487,23 +489,25 @@ with st.expander("➕ Eten toevoegen", expanded=False):
 # Snelle porties voor drank
 # ------------------------------------------------------------
 
-if unit == "ml":
+    quick_amount = None
 
-    quick_cols = st.columns(3)
+    if unit == "ml":
 
-    with quick_cols[0]:
-        if st.button("🍺 250 ml", disabled=day_closed):
-            amount = 250.0
+        quick_cols = st.columns(3)
 
-    with quick_cols[1]:
-        if st.button("🍺 330 ml", disabled=day_closed):
-            amount = 330.0
+        with quick_cols[0]:
+            if st.button("🍺 250 ml", disabled=day_closed):
+                quick_amount = 250.0
 
-    with quick_cols[2]:
-        if st.button("🍺 500 ml", disabled=day_closed):
-            amount = 500.0
+        with quick_cols[1]:
+            if st.button("🍺 330 ml", disabled=day_closed):
+                quick_amount = 330.0
 
-    st.caption(f"Eenheid: {unit}")
+        with quick_cols[2]:
+            if st.button("🍺 500 ml", disabled=day_closed):
+                quick_amount = 500.0
+
+        st.caption("Snelle porties voor (drank)")
 
     # ------------------------------------------------------------
     # Default hoeveelheid
@@ -521,10 +525,11 @@ if unit == "ml":
         default_amount = float(p["std_portion_cl"])
 
     # ------------------------------------------------------------
-    # Input per unit
+    # Hoeveelheid invoer
     # ------------------------------------------------------------
 
     if unit == "gram":
+
         amount = st.number_input(
             "Hoeveelheid (gram)",
             min_value=0.0,
@@ -534,6 +539,7 @@ if unit == "ml":
         )
 
     elif unit == "ml":
+
         amount = st.number_input(
             "Hoeveelheid (ml)",
             min_value=0.0,
@@ -543,6 +549,7 @@ if unit == "ml":
         )
 
     elif unit == "cl":
+
         amount = st.number_input(
             "Hoeveelheid (cl)",
             min_value=0.0,
@@ -552,6 +559,7 @@ if unit == "ml":
         )
 
     else:
+
         amount = st.number_input(
             f"Hoeveelheid ({unit})",
             min_value=0.0,
@@ -560,10 +568,16 @@ if unit == "ml":
             disabled=day_closed
         )
 
+    # ------------------------------------------------------------
+    # Snelle drankknoppen overschrijven hoeveelheid
+    # ------------------------------------------------------------
 
-# ------------------------------------------------------------
-# Toevoegen
-# ------------------------------------------------------------
+    if quick_amount is not None:
+        amount = quick_amount
+
+    # ------------------------------------------------------------
+    # Toevoegen
+    # ------------------------------------------------------------
 
     if st.button("Toevoegen", key="add_food", disabled=day_closed):
 
@@ -571,7 +585,6 @@ if unit == "ml":
             st.warning("Vul een geldige hoeveelheid in.")
             st.stop()
 
-        # kcal berekening via centrale helper
         kcal = calc_food_kcal(p, amount)
 
         day_rec["food_items"].append({
@@ -628,133 +641,178 @@ with st.expander("➕ Beweging toevoegen", expanded=False):
 # HOOFDSTUK 8b — RECEPT GENERATOR (PROMPT-BASED, STABIEL)
 # ============================================================
 
-def generate_recipe_item(meal_type: str, program: str) -> dict:
-    """
-    Stabiele prompt-based generator.
-    Output is altijd één dict in exact hetzelfde formaat als food_items.
+def generate_recipe_item(meal_type: str, program: str, remaining_kcal: int) -> dict:
 
-    BELANGRIJK:
-    - Nu nog zonder externe API-call (om je kern 1.0 niet te slopen).
-    - In Stap 2 vervangen we de "fake_model_call" door jouw echte prompt-call.
-    """
 
-    # --- Prompt (leidend op blauw/paars, coachend, kcal spoor)
+
+    # ---------------------------------------------------------
+    # kcal bandbreedte
+    # ---------------------------------------------------------
+
+    if meal_type == "Lunch":
+        kcal_min = 450
+        kcal_max = 650
+    else:
+        kcal_min = 600
+        kcal_max = 850
+
+    # ---------------------------------------------------------
+    # PROMPT
+    # ---------------------------------------------------------
+
     prompt = f"""
-Je bent Peet Paars. Coachend en direct. Geen WW marketingtaal.
-Programma: {program}.
-Maaltijd: {meal_type}.
+Je bent Peet Paars.
 
-Maak 1 recept dat past bij {program}.
-Eiwit eerst. Groente als volume. Vet/saus is een bewuste keuze.
-ZeroPoint foods zijn vrij inzetbaar maar niet stapelen alsof het onbeperkt is.
+Je denkt als een chef én voedingscoach.
 
-Output ALLEEN als JSON met exact deze keys:
+Je taak is een praktische maaltijd te bedenken
+voor een normale thuiskeuken.
+
+MAALTIJD
+{meal_type}
+
+PROGRAMMA
+{program}
+
+DAGBALANS
+
+Dagdoel kcal: {target_kcal}
+Gegeten kcal: {eaten_kcal}
+Bewogen kcal: {burned_kcal}
+Resterend kcal budget: {remaining_kcal}
+
+STRATEGIE VAN PEET
+
+- eiwit staat centraal
+- groente zorgt voor volume
+- vet en saus zijn de stuurknoppen
+- maximaal 10 ingrediënten
+- geschikt voor een doordeweekse keuken
+
+CALORIE DOEL
+
+tussen {kcal_min} en {kcal_max} kcal
+maar probeer binnen het resterende kcal budget te blijven.
+
+OUTPUT
+
+Geef alleen JSON in dit formaat:
+
 {{
-  "title": "string",
-  "kcal": integer,
-  "ingredients": ["string", "..."],
-  "note": "string (1 zin coachend)"
+"title": "naam van het gerecht",
+"kcal": integer,
+"ingredients": [
+"ingrediënt hoeveelheid",
+"ingrediënt hoeveelheid"
+],
+"instructions": [
+"korte kookstap",
+"korte kookstap"
+],
+"chef_tip": "korte tip van Peet"
 }}
-
-Regels:
-- kcal tussen 450 en 850
-- ingrediënten max 10 regels
-- geen vage termen, concreet (bijv. 'kipfilet 150g', 'broccoli 300g')
 """
 
-    # --- Tijdelijke veilige call: deterministische fallback
-    # In stap 2 vervangen we dit door een echte model-call.
+    # ---------------------------------------------------------
+    # fallback model
+    # ---------------------------------------------------------
+
     def fake_model_call(_prompt: str) -> dict:
+
         if meal_type == "Lunch":
-            if program == "Paars":
-                return {
-                    "title": "Bowl: kipfilet, bonen, groenten, yoghurt",
-                    "kcal": 560,
-                    "ingredients": [
-                        "kipfilet 150 g",
-                        "kidneybonen 150 g",
-                        "komkommer 150 g",
-                        "tomaat 150 g",
-                        "paprika 100 g",
-                        "magere yoghurt 150 g",
-                        "citroen, zout, peper",
-                    ],
-                    "note": "Eiwit en volume staan goed. Houd olie en kaas uit de buurt vandaag.",
-                }
             return {
-                "title": "Salade: tonijn, ei, veel groente, yoghurt dressing",
-                "kcal": 520,
+                "title": "Bowl met kipfilet, bonen en yoghurt dressing",
+                "kcal": 560,
                 "ingredients": [
-                    "tonijn op water 1 blik",
-                    "ei 2 stuks",
-                    "sla 150 g",
-                    "komkommer 150 g",
+                    "kipfilet 150 g",
+                    "kidneybonen 150 g",
+                    "paprika 100 g",
+                    "komkommer 100 g",
                     "tomaat 150 g",
-                    "magere yoghurt 150 g",
-                    "mosterd 1 tl",
+                    "magere yoghurt 150 g"
                 ],
-                "note": "Netjes. Als je nog honger hebt, pak extra groente of kwark, geen snack.",
+                "instructions": [
+                    "bak de kipfilet goudbruin",
+                    "snij de groente grof",
+                    "meng yoghurt met citroen en peper",
+                    "combineer alles in een kom"
+                ],
+                "chef_tip": "Gebruik yoghurt in plaats van olie voor een lichtere dressing."
             }
 
-        # Diner
-        if program == "Paars":
-            return {
-                "title": "Ovenschaal: zalm, broccoli, krieltjes, citroen",
-                "kcal": 780,
-                "ingredients": [
-                    "zalm 180 g",
-                    "broccoli 350 g",
-                    "krieltjes 250 g",
-                    "citroen 1",
-                    "knoflook 1 teen",
-                    "olijfolie 1 el",
-                ],
-                "note": "Prima diner. Olie is je hefboom, hou het bij 1 eetlepel.",
-            }
         return {
-            "title": "Roerbak: kip, wokgroente, bloemkoolrijst, sojasaus",
-            "kcal": 650,
+            "title": "Zalm met broccoli en krieltjes uit de oven",
+            "kcal": 720,
             "ingredients": [
-                "kipfilet 180 g",
-                "wokgroenten 400 g",
-                "bloemkoolrijst 300 g",
-                "sojasaus 1 el",
-                "sesamolie 1 tl",
+                "zalmfilet 180 g",
+                "broccoli 350 g",
+                "krieltjes 250 g",
+                "citroen 1",
+                "olijfolie 1 el"
             ],
-            "note": "Sterk. Volume en eiwit staan. Vet hou je klein, dan win je de dag.",
+            "instructions": [
+                "verwarm oven op 200 graden",
+                "snij broccoli en halveer krieltjes",
+                "leg alles op een bakplaat",
+                "bak 20 minuten in de oven"
+            ],
+            "chef_tip": "Hou olie bij één eetlepel. Dat is de belangrijkste kcal knop."
         }
 
     model_out = None
 
-    # --- Probeer echte OpenAI call ---
-    if OPENAI_AVAILABLE:
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key:
-            try:
-                client = OpenAI(api_key=api_key)
 
-                response = client.responses.create(
-                    model="gpt-4.1-mini",
-                    input=prompt,
-                )
+    # ---------------------------------------------------------
+    # echte OpenAI call
+    # ---------------------------------------------------------
+    model_out = None
 
-                raw = response.output_text
-                import json
-                model_out = json.loads(raw)
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-            except Exception:
-                model_out = None
+        response = client.responses.create(
+            model="gpt-4o-mini",
+            input=prompt
+        )
 
-    # --- Fallback als API niet beschikbaar of fout ---
+        st.write("FULL RESPONSE OBJECT:")
+        st.write(response)
+
+        raw = getattr(response, "output_text", None)
+
+        st.write("RAW OUTPUT_TEXT:")
+        st.write(raw)
+
+        import json
+        import re
+
+        if raw:
+            match = re.search(r"\{.*\}", raw, re.DOTALL)
+            if match:
+                model_out = json.loads(match.group())
+            else:
+                st.error("Geen JSON-object gevonden in output_text")
+                st.stop()
+        else:
+            st.error("output_text is leeg of None")
+            st.stop()
+
+    except Exception as e:
+        st.error(f"OpenAI fout: {e}")
+        st.stop()
+    # ---------------------------------------------------------
+    # GEEN fallback tijdens debug
+    # ---------------------------------------------------------
+
     if not model_out:
-        model_out = fake_model_call(prompt)
+        st.error("AI leverde geen bruikbaar resultaat op")
+        st.stop()
 
-
-    # --- Converteer naar food_item structuur
     title = str(model_out.get("title", f"{meal_type} recept"))
     kcal = int(model_out.get("kcal", 650))
     ingredients = model_out.get("ingredients", [])
-    note = str(model_out.get("note", ""))
+    instructions = model_out.get("instructions", [])
+    chef_tip = str(model_out.get("chef_tip", ""))
 
     return {
         "id": str(uuid.uuid4()),
@@ -764,11 +822,12 @@ Regels:
         "kcal": kcal,
         "timestamp": datetime.now().isoformat(),
         "meta": {
-            "source": "prompt_generator_stub",
+            "source": "peet_prompt",
             "program": program,
             "meal_type": meal_type,
-            "note": note,
             "ingredients": ingredients,
+            "instructions": instructions,
+            "note": chef_tip,
         },
     }
 # ============================================================
@@ -786,12 +845,12 @@ c1, c2 = st.columns(2)
 
 with c1:
     if st.button("🟣 Genereer lunch", disabled=day_closed):
-        st.session_state["pending_recipe"] = generate_recipe_item("Lunch", program)
+        st.session_state["pending_recipe"] = generate_recipe_item("Lunch", program, remaining_kcal)
         st.rerun()
 
 with c2:
     if st.button("🟣 Genereer diner", disabled=day_closed):
-        st.session_state["pending_recipe"] = generate_recipe_item("Diner", program)
+        st.session_state["pending_recipe"] = generate_recipe_item("Diner", program, remaining_kcal)
         st.rerun()
 
 pending = st.session_state.get("pending_recipe")
