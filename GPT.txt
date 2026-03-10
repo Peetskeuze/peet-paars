@@ -85,3 +85,175 @@ Dan pakken we exact hier weer op.
 
 Rustig even alles resetten.
 Dit soort account-bugs lossen meestal op na een schone login. 🔧
+
+
+Hier is een baken (checkpoint) dat je kunt bewaren voor dit supporttraject.
+
+Baken: OpenAI Support – Missing Conversations Escalation
+
+Datum: 10 maart 2026
+Case Number: 06428064
+Status: Geëscaleerd naar support specialist / technisch team
+
+Situatie:
+
+Business workspace “Werkruimte van Peter van de Kamp” is eerder gedeactiveerd.
+
+Persoonlijke workspace is niet gemerged met de Business workspace.
+
+Chats die na de deactivatie zijn gemaakt ontbreken in de normale Chats-lijst.
+
+Sommige chats zijn wel zichtbaar via zoekfunctie.
+
+Sommige conversation links laden niet.
+
+Belangrijk bewijs:
+
+Ongeveer 45 conversation IDs teruggevonden via browser history.
+
+Voorbeelden:
+
+https://chatgpt.com/c/6985bb06-425c-838d-95c4-e4d0ce63d73b
+
+https://chatgpt.com/c/69946aca-38d4-8384-8bae-a07b6ef6d5b4
+
+https://chatgpt.com/c/699863cd-e048-8396-bb61-1720a612bc09
+
+https://chatgpt.com/c/69a963e2-1bd0-832a-9fb5-86e841748e47
+
+Waarschijnlijke oorzaak (volgens support):
+
+Chat indexing / sync probleem
+
+Mogelijk nog gekoppeld aan oude workspace
+
+Actie genomen:
+
+Ticket geëscaleerd naar technisch team.
+
+Extra informatie + conversation IDs toegevoegd.
+
+Volgende stap:
+
+Reactie van OpenAI support specialist via mail of supportthread.
+
+Notitie:
+De chats lijken nog te bestaan in het systeem omdat ze via zoekfunctie gevonden worden.
+
+Als je wilt kan ik ook een tweede baken maken: “Recovery Plan Chats” met wat je kunt doen als support er niet uitkomt. Dat is handig als backup voor je projectwerk (zoals je Peet-projecten).
+
+graag 2e baken 
+
+Hier is het tweede baken dat als backupstrategie dient voor het geval support het probleem niet direct kan oplossen.
+
+Baken: Chat Recovery Plan – Missing Conversations
+
+Datum: 10 maart 2026
+Gerelateerd case: 06428064
+Status: Preventieve recoverystrategie
+
+Doel
+
+Projectinformatie veiligstellen uit verdwenen ChatGPT-conversaties (o.a. Peet-projecten, prompts, code, marketingmateriaal).
+
+Stap 1 – Conversation IDs veiligstellen
+
+Alle gevonden links opslaan in één document.
+
+Voorbeeld:
+
+ChatGPT Recovery List
+https://chatgpt.com/c/6985bb06-425c-838d-95c4-e4d0ce63d73b
+https://chatgpt.com/c/69946aca-38d4-8384-8bae-a07b6ef6d5b4
+https://chatgpt.com/c/699863cd-e048-8396-bb61-1720a612bc09
+https://chatgpt.com/c/69a963e2-1bd0-832a-9fb5-86e841748e47
+
+Opslaan in:
+
+Google Docs / Notion / lokaal bestand.
+
+Doel: complete lijst van ±45 chats bewaren.
+
+Stap 2 – Browser cache recovery
+
+Soms zit de inhoud nog in de browser.
+
+Controleren via:
+
+Ctrl + H  (Chrome history)
+
+Of via:
+
+chrome://history
+
+Soms kun je nog delen van gesprekken terugvinden in cached pagina's.
+
+Stap 3 – Data Export van ChatGPT
+
+In ChatGPT:
+
+Settings
+→ Data Controls
+→ Export Data
+
+Je krijgt een ZIP-bestand met alle chats.
+
+Belangrijk:
+Als de chats daar wel in staan, dan is het puur een index probleem.
+
+Stap 4 – Screenshots / partial recovery
+
+Als een chat nog opent via search:
+
+open gesprek
+
+kopieer tekst
+
+plak in document
+
+Zo kun je projectinformatie redden.
+
+Stap 5 – Project reconstructie (indien nodig)
+
+Voor belangrijke projecten (bijv. jouw):
+
+Peet Kiest
+
+Peet Card
+
+Peet Paars
+
+Peet Vooruit
+
+kun je vaak:
+
+prompts reconstrueren
+
+code hergenereren
+
+JSON schema's opnieuw maken
+
+ChatGPT kan daarbij helpen.
+
+Realistische kans op herstel
+
+Omdat chats:
+
+via search verschijnen
+
+maar niet laden
+
+is de kans groot dat:
+
+data bestaat nog
+maar index beschadigd is
+
+Dat is meestal herstelbaar door OpenAI.
+
+Recovery status
+Phase 1: Support escalation     ✓
+Phase 2: Investigation          ⏳
+Phase 3: Data recovery          pending
+Notitie
+
+De chats bevatten belangrijke projectontwikkeling en moeten waar mogelijk worden hersteld.

@@ -5,9 +5,17 @@
 
 import streamlit as st
 import uuid
+
+
+from core.day_analysis import analyze_day
+from core.coach import coach_advice
 from datetime import datetime, date, timedelta
 import json
 from pathlib import Path
+from core.nutrition import analyze_nutrition
+from core.hunger import predict_hunger
+from core.meal_timing import hours_since_last_meal
+
 
 # ============================================================
 # OPENAI (OPTIONEEL — VEILIG)
@@ -67,21 +75,21 @@ DEFAULT_DAILY_TARGET_KCAL = 1800
 # ------------------------------------------------------------
 
 WEIGH_DAY = 2   # woensdag
-
+USER_WEIGHT_KG = 110
 
 # ------------------------------------------------------------
 # Activiteiten energieverbruik
 # kcal per minuut (ruwe richtwaarden)
 # ------------------------------------------------------------
 
-ACTIVITY_KCAL_PER_MIN = {
-    "wandelen": 4,
-    "fietsen": 8,
+ACTIVITY_MET = {
+    "wandelen": 3.5,
+    "fietsen rustig": 6,
+    "fietsen tempo": 8,
+    "wielrennen": 10,
     "hardlopen": 10,
-    "krachttraining": 6,
-    "zwemmen": 9,
-    "spinnen": 9,
-    "sport algemeen": 6,
+    "krachttraining": 5,
+    "zwemmen": 8,
 }
 
 
@@ -240,6 +248,21 @@ def make_recipe_stub(meal_type: str, program: str) -> dict:
         "meta": {"source": "recipe_stub", "program": program, "meal_type": meal_type, "note": note},
     }
 
+# ------------------------------------------------------------
+# Huidig gewicht ophalen uit weight_log
+# ------------------------------------------------------------
+
+def get_current_weight():
+
+    log = st.session_state.get("weight_log", [])
+
+    if not log:
+        return 100  # fallback gewicht
+
+    latest = sorted(log, key=lambda x: x["date"])[-1]
+
+    return float(latest["weight"])
+
 # ============================================================
 # DATA OPSLAG (JSON)
 # ============================================================
@@ -359,39 +382,74 @@ if "days" not in st.session_state:
 # ============================================================
 
 today_dt = date.today()
-current_week = today_dt.isocalendar().week
+
+iso = today_dt.isocalendar()
+current_week = iso.week
+current_year = iso.year
+
 today_weekday = today_dt.weekday()
+
+week_key = f"{current_year}-{current_week}"
+
+# ------------------------------------------------------------
+# Trigger weegmoment
+# ------------------------------------------------------------
 
 if (
     today_weekday == WEIGH_DAY
-    and st.session_state["last_weight_prompt_week"] != current_week
-    and not st.session_state["show_weight_prompt"]
+    and st.session_state.get("last_weight_prompt_week") != week_key
+    and not st.session_state.get("show_weight_prompt", False)
 ):
     st.session_state["show_weight_prompt"] = True
 
-if st.session_state["show_weight_prompt"]:
+
+# ------------------------------------------------------------
+# Weegmoment UI
+# ------------------------------------------------------------
+
+if st.session_state.get("show_weight_prompt", False):
+
     st.markdown("---")
     st.subheader("Wekelijks weegmoment")
-    st.write("Als je wilt, kun je je gewicht vastleggen. Dit is voor trend, niet voor oordeel.")
 
-    weight = st.number_input("Gewicht (kg)", min_value=30.0, max_value=250.0, step=0.1, key="weekly_weight_input")
+    st.write(
+        "Als je wilt kun je je gewicht vastleggen. "
+        "Dit is voor trend, niet voor oordeel."
+    )
+
+    weight = st.number_input(
+        "Gewicht (kg)",
+        min_value=30.0,
+        max_value=250.0,
+        step=0.1,
+        key="weekly_weight_input"
+    )
 
     c1, c2 = st.columns(2)
+
     with c1:
+
         if st.button("Opslaan", key="save_weight"):
+
             st.session_state["weight_log"].append({
                 "date": today_dt.isoformat(),
-                "week": int(current_week),
+                "week": week_key,
                 "weight": float(weight),
             })
-            st.session_state["last_weight_prompt_week"] = int(current_week)
+
+            st.session_state["last_weight_prompt_week"] = week_key
             st.session_state["show_weight_prompt"] = False
+
             save_data()
             st.rerun()
+
     with c2:
+
         if st.button("Overslaan", key="skip_weight"):
-            st.session_state["last_weight_prompt_week"] = int(current_week)
+
+            st.session_state["last_weight_prompt_week"] = week_key
             st.session_state["show_weight_prompt"] = False
+
             save_data()
             st.rerun()
 
@@ -443,43 +501,62 @@ program = day_rec.get("program", "Paars")
 # HOOFDSTUK 7 — DASHBOARD (COMPACT)
 # ============================================================
 
+# ------------------------------------------------------------
+# Basis berekeningen
+# ------------------------------------------------------------
+
+target_kcal = int(day_rec.get("target_kcal", DEFAULT_DAILY_TARGET_KCAL))
+
 eaten_kcal = sum_food_kcal(day_rec)
 burned_kcal = sum_activity_kcal(day_rec)
-netto_kcal = int(eaten_kcal - burned_kcal)
 
-balance = netto_kcal - int(target_kcal)
+netto_kcal = eaten_kcal - burned_kcal
+balance = netto_kcal - target_kcal
+
 
 # ------------------------------------------------------------
-# Resterend kcal budget voor AI
-# ------------------------------------------------------------
-# ------------------------------------------------------------
-# Resterend kcal budget voor AI
+# Analyse + Peet coach
 # ------------------------------------------------------------
 
-remaining_kcal = int(target_kcal) - int(eaten_kcal) + int(burned_kcal)
+analysis = analyze_day(day_rec)
+
+coach_text = coach_advice(
+    analysis["net"],
+    target_kcal
+)
+
+
+# ------------------------------------------------------------
+# Resterend kcal budget voor AI recepten
+# ------------------------------------------------------------
+
+remaining_kcal = target_kcal - eaten_kcal + burned_kcal
 
 if remaining_kcal < 0:
     remaining_kcal = 0
 
-#---------------------------------------------------------------
-# Dagdashboard
-#---------------------------------------------------------------
+
+# ------------------------------------------------------------
+# Dagdashboard UI
+# ------------------------------------------------------------
 
 st.markdown("### Dagdashboard")
 
-st.metric("Netto kcal", int(netto_kcal))
+st.metric("Netto kcal", netto_kcal)
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.metric("Gegeten", int(eaten_kcal))
+    st.metric("Gegeten", eaten_kcal)
 
 with col2:
-    st.metric("Bewogen", int(burned_kcal))
+    st.metric("Bewogen", burned_kcal)
 
-st.metric("Dagdoel", int(target_kcal))
+st.metric("Dagdoel", target_kcal)
+
+
 # ------------------------------------------------------------
-# Coach feedback
+# Bestaande coach feedback
 # ------------------------------------------------------------
 
 if balance <= 0:
@@ -492,11 +569,38 @@ st.caption(
         eaten=eaten_kcal,
         burned=burned_kcal,
         net=netto_kcal,
-        target=int(target_kcal),
+        target=target_kcal,
     )
 )
 
+
+# ------------------------------------------------------------
+# Nieuwe Peet coach
+# ------------------------------------------------------------
+
+st.markdown("### Peet coach")
+st.info(coach_text)
+
 st.caption(f"Dagdoel: {target_kcal} kcal")
+
+# ------------------------------------------------------------
+# Nutrition analyse + Hunger predictor
+# ------------------------------------------------------------
+
+nutrition = analyze_nutrition(day_rec.get("food_items", []))
+hunger_prediction = predict_hunger(nutrition)
+hours_since_meal = hours_since_last_meal(day_rec.get("food_items", []))
+
+st.markdown("### Honger verwachting")
+st.info(hunger_prediction)
+
+if hours_since_meal is not None:
+
+    if hours_since_meal > 4:
+        st.warning(f"Laatste maaltijd {hours_since_meal} uur geleden.")
+
+    else:
+        st.caption(f"Laatste maaltijd {hours_since_meal} uur geleden.")
 
 # ============================================================
 # HOOFDSTUK 7b — WEEK KOERS
@@ -508,11 +612,12 @@ week_start = today_dt - timedelta(days=today_dt.weekday())
 week_balance = 0
 days_counted = 0
 
+
 for iso_day, d in st.session_state.get("days", {}).items():
 
     d_date = date.fromisoformat(iso_day)
 
-    if d_date >= week_start and d_date <= today_dt:
+    if week_start <= d_date <= today_dt:
 
         eaten = sum_food_kcal(d)
         burned = sum_activity_kcal(d)
@@ -524,6 +629,10 @@ for iso_day, d in st.session_state.get("days", {}).items():
         week_balance += net - target
         days_counted += 1
 
+
+# ------------------------------------------------------------
+# Week dashboard UI
+# ------------------------------------------------------------
 
 st.markdown("---")
 st.markdown("### Week koers")
@@ -541,8 +650,6 @@ else:
     else:
         st.warning(f"{week_balance:+} kcal deze week")
         st.caption("Een paar lichtere keuzes brengen je weer op koers.")
-
-
 # ============================================================
 # HOOFDSTUK 8 — ACTIES (ETEN + EIGEN PRODUCT + BEWEGING)
 # ============================================================
@@ -763,7 +870,7 @@ with st.expander("➕ Beweging toevoegen", expanded=False):
 
     activity = st.selectbox(
         "Activiteit",
-        list(ACTIVITY_KCAL_PER_MIN.keys()),
+        list(ACTIVITY_MET.keys()),
         disabled=day_closed
     )
 
@@ -774,12 +881,22 @@ with st.expander("➕ Beweging toevoegen", expanded=False):
         disabled=day_closed
     )
 
+    garmin_kcal = st.number_input(
+        "Of voer kcal direct in (Garmin)",
+        min_value=0,
+        step=10,
+        disabled=day_closed
+    )
+
     if st.button("Toevoegen", key="add_activity", disabled=day_closed):
 
         if duration <= 0:
             st.warning("Vul een geldige duur in.")
         else:
-            kcal = int(duration) * int(ACTIVITY_KCAL_PER_MIN[activity])
+            weight = get_current_weight()
+            met = ACTIVITY_MET[activity]
+            hours = duration / 60
+            kcal = int(met * weight * hours * 0.8)
 
             day_rec["activity_items"].append({
                 "id": str(uuid.uuid4()),
