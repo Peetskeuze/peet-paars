@@ -1463,11 +1463,26 @@ with ui.column().classes(
 
     with ui.tab_panels(refs['tabs'], value=refs['tab_today']).classes('w-full'):
 
+
+
         # =========================================================
         # TAB 1 — VANDAAG
         # =========================================================
 
         with ui.tab_panel(refs['tab_today']):
+
+            # profiel laden
+            profile = load_user_profile() or {}
+
+            # berekend dagdoel van de app
+            calculated_kcal = DEFAULT_DAILY_TARGET_KCAL
+
+            # gebruiker kan dit overschrijven
+            if profile.get("kcal_target"):
+                daily_goal = profile["kcal_target"]
+            else:
+                daily_goal = calculated_kcal
+
 
             with ui.card().classes('w-full'):
                 ui.label('Vandaag').classes('text-lg font-semibold')
@@ -1501,11 +1516,10 @@ with ui.column().classes(
                     refs['burned_val'] = ui.label('0')
 
                     ui.label('Dagdoel')
-                    refs['target_val'] = ui.label(str(DEFAULT_DAILY_TARGET_KCAL))
+                    refs['target_val'] = ui.label(str(daily_goal))
 
                 refs['balance_badge'] = ui.label('').classes('w-full rounded-xl p-3 text-sm')
                 refs['coach_line'] = ui.label('').classes('text-sm text-gray-600')
-
 
         # =========================================================
         # TAB 2 — INVOER
@@ -1648,6 +1662,8 @@ with ui.column().classes(
 
         with ui.tab_panel(refs['tab_settings']):
 
+            profile = load_user_profile() or {}
+
             with ui.card().classes('w-full'):
 
                 ui.label('Persoonlijk profiel').classes('text-lg font-semibold')
@@ -1655,33 +1671,40 @@ with ui.column().classes(
                 refs['profile_sex'] = ui.select(
                     options=['male', 'female'],
                     label='Geslacht',
-                    value='male'
+                    value=profile.get('sex', 'male')
                 ).classes('w-full')
 
                 refs['profile_age'] = ui.number(
                     label='Leeftijd',
-                    value=40
+                    value=profile.get('age', 40)
                 ).classes('w-full')
 
                 refs['profile_height'] = ui.number(
                     label='Lengte (cm)',
-                    value=180
+                    value=profile.get('height', 180)
                 ).classes('w-full')
 
                 refs['profile_weight'] = ui.number(
                     label='Huidig gewicht (kg)',
-                    value=90
+                    value=profile.get('current_weight', 90)
                 ).classes('w-full')
 
                 refs['profile_target'] = ui.number(
                     label='Streefgewicht (kg)',
-                    value=80
+                    value=profile.get('target_weight', 80)
                 ).classes('w-full')
 
                 refs['profile_weeks'] = ui.number(
                     label='Aantal weken',
-                    value=16
+                    value=profile.get('weeks_to_goal', 16)
                 ).classes('w-full')
+
+                refs['profile_kcal_target'] = ui.number(
+                    label='Dagelijkse calorie doel',
+                    value=profile.get('kcal_target', None)
+                ).classes('w-full')
+
+                ui.label('Leeg laten = advies van Peet Coach').classes('text-xs text-gray-500')
 
                 ui.button(
                     'Opslaan',
