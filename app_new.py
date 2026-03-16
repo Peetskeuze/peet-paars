@@ -5,17 +5,18 @@
 
 import streamlit as st
 import uuid
+import pandas as pd
+import json
 
 
 from core.day_analysis import analyze_day
 from core.coach import coach_advice
 from datetime import datetime, date, timedelta
-import json
 from pathlib import Path
 from core.nutrition import analyze_nutrition
 from core.hunger import predict_hunger
 from core.meal_timing import hours_since_last_meal
-
+from core.product_db import search_products, get_product, load_products, add_product
 
 # ============================================================
 # OPENAI (OPTIONEEL — VEILIG)
@@ -87,7 +88,7 @@ ACTIVITY_MET = {
     "fietsen rustig": 6,
     "fietsen tempo": 8,
     "wielrennen": 10,
-    "hardlopen": 10,
+    "spinnen": 9,
     "krachttraining": 5,
     "zwemmen": 8,
 }
@@ -97,22 +98,31 @@ ACTIVITY_MET = {
 # HOOFDSTUK 1B — FOOD_LIBRARY (AUTO-GENERATED v8, LEIDEND)
 # ============================================================
 
+# ============================================================
+# HOOFDSTUK 1B — PRODUCT DATABASE (LEIDEND)
+# ============================================================
+
+from core.product_db import load_products
+
 try:
-    from food_library_generated_v8_2_fixed import FOOD_LIBRARY
+    PRODUCTS = load_products()
+
 except Exception as e:
-    FOOD_LIBRARY = {}
+    PRODUCTS = []
     raise RuntimeError(
-        "FOOD_LIBRARY ontbreekt. Zet food_library_generated_v8_2_fixed.py naast app_new.py."
+        "products.json ontbreekt of kan niet geladen worden."
     ) from e
-
-
 # ============================================================
 # FOOD ALIAS INDEX (SNELLE PRODUCT ZOEKER)
 # ============================================================
 
 FOOD_ALIAS_INDEX = {}
 
-for key, prod in FOOD_LIBRARY.items():
+from core.product_db import load_products
+
+products = load_products()
+
+for prod in products:
 
     # label indexeren
     label = prod.get("label", "").lower().strip()
@@ -123,7 +133,7 @@ for key, prod in FOOD_LIBRARY.items():
     # alias indexeren
     for alias in prod.get("alias", []):
         alias_clean = alias.lower().strip()
-        FOOD_ALIAS_INDEX[alias_clean] = key
+        FOOD_ALIAS_INDEX[alias_clean] = prod["id"]
 
 
 # ------------------------------------------------------------
@@ -378,6 +388,37 @@ if "days" not in st.session_state:
     st.session_state["days"] = load_data()
 
 # ============================================================
+# DAGDATA LADEN
+# ============================================================
+
+DAY_LOG_FILE = Path("data/day_log.json")
+
+if DAY_LOG_FILE.exists():
+    with open(DAY_LOG_FILE, "r", encoding="utf-8") as f:
+        day_log = json.load(f)
+else:
+    day_log = {}
+
+today_key = date.today().isoformat()
+
+if today_key not in day_log:
+    day_log[today_key] = {
+        "food_items": [],
+        "weight": None
+    }
+
+day_data = day_log[today_key]
+
+# ============================================================
+# DAGDATA OPSLAAN
+# ============================================================
+
+def save_day_log():
+    with open(DAY_LOG_FILE, "w", encoding="utf-8") as f:
+        json.dump(day_log, f, indent=2, ensure_ascii=False)
+
+
+# ============================================================
 # HOOFDSTUK 4 — WEIGHT PROMPT (1x PER WEEK OP WO)
 # ============================================================
 
@@ -419,11 +460,12 @@ if st.session_state.get("show_weight_prompt", False):
 
     weight = st.number_input(
         "Gewicht (kg)",
-        min_value=30.0,
-        max_value=250.0,
-        step=0.1,
-        key="weekly_weight_input"
+        value=float(day_data.get("weight") or 0.0)
     )
+
+    if weight != day_data.get("weight"):
+        day_data["weight"] = weight
+        save_day_log()
 
     c1, c2 = st.columns(2)
 
@@ -650,265 +692,542 @@ else:
     else:
         st.warning(f"{week_balance:+} kcal deze week")
         st.caption("Een paar lichtere keuzes brengen je weer op koers.")
+
 # ============================================================
-# HOOFDSTUK 8 — ACTIES (ETEN + EIGEN PRODUCT + BEWEGING)
+# HOOFDSTUK 8 — ACTIES (ETEN + BEWEGING)
 # ============================================================
+
+st.divider()
+st.header("Dag acties")
+
 # ------------------------------------------------------------
-# 8.0 — SNELLE INVOER (MOBILE FAST ENTRY)
+# Safety: zorg dat lijsten bestaan
+# ------------------------------------------------------------
+
+if "food_items" not in day_rec:
+    day_rec["food_items"] = []
+
+if "activity_items" not in day_rec:
+    day_rec["activity_items"] = []
+
+
+# ============================================================
+# HELPER — kcal berekenen
+# ============================================================
+
+def calculate_kcal(product, amount):
+
+    unit = str(product.get("unit", "gram")).lower()
+
+    if unit == "stuk":
+        return product["kcal"] * amount
+
+    return (product["kcal"] / 100) * amount
+
+
+# ------------------------------------------------------------
+# 8.1 - SNELLE INVOER
 # ------------------------------------------------------------
 
 st.markdown("### ⚡ Snelle invoer")
 
-quick_text = st.text_input(
-    "Typ bijvoorbeeld: 150 kipfilet",
-    key="quick_food_input",
-    disabled=day_closed
-)
+if "pending_new_product" not in st.session_state:
+    st.session_state.pending_new_product = None
 
-if st.button("Toevoegen via tekst", disabled=day_closed):
 
-    if not quick_text:
-        st.warning("Voer iets in.")
+# ------------------------------------------------------------
+# helper - food item toevoegen aan dag
+# ------------------------------------------------------------
+
+def add_food_item_to_day(product, amount):
+
+    kcal = calculate_kcal(product, amount)
+
+    day_rec["food_items"].append({
+        "id": str(uuid.uuid4()),
+        "product_id": product.get("id"),
+        "product": product["name"],
+        "amount": float(amount),
+        "unit": product.get("unit", "gram"),
+        "kcal": int(kcal),
+        "timestamp": datetime.now().isoformat(),
+    })
+
+
+# ------------------------------------------------------------
+# helper - AI vult nieuw product in
+# ------------------------------------------------------------
+
+def ai_build_product(product_name, unit_choice):
+
+    if unit_choice == "per stuk":
+        unit = "stuk"
+        std_portion = 1
+        prompt_unit = "per 1 stuk"
+
+    elif unit_choice == "per 250 ml":
+        unit = "ml"
+        std_portion = 250
+        prompt_unit = "per 250 ml"
 
     else:
+        unit = "gram"
+        std_portion = 100
+        prompt_unit = "per 100 gram"
 
-        entries = quick_text.split("+")
-        added = 0
+    prompt = f"""
+Je bent een nutrition database assistent.
 
-        for entry in entries:
+Geef realistische gemiddelde voedingswaarden voor dit product:
 
-            entry = entry.strip()
-            parts = entry.split(" ", 1)
+PRODUCT: {product_name}
+EENHEID: {prompt_unit}
 
-            if len(parts) != 2:
-                continue
+Geef alleen JSON in exact dit formaat:
 
+{{
+  "kcal": 0,
+  "protein": 0,
+  "fat": 0,
+  "carbs": 0,
+  "fiber": 0
+}}
+
+Gebruik alleen cijfers.
+Geen uitleg.
+"""
+
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=prompt
+    )
+
+    raw = getattr(response, "output_text", "") or ""
+    cleaned = raw.replace("```json", "").replace("```", "").strip()
+
+    import re
+    match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+
+    if not match:
+        raise ValueError("AI gaf geen geldig JSON object terug.")
+
+    ai_data = json.loads(match.group())
+
+    return {
+        "id": product_name.lower().replace(" ", "_"),
+        "name": product_name,
+        "unit": unit,
+        "kcal": float(ai_data.get("kcal", 0)),
+        "protein": float(ai_data.get("protein", 0)),
+        "fat": float(ai_data.get("fat", 0)),
+        "carbs": float(ai_data.get("carbs", 0)),
+        "fiber": float(ai_data.get("fiber", 0)),
+        "std_portion": std_portion,
+        "alias": [product_name],
+    }
+
+
+def process_quick_food_input(text):
+
+    entries = [e.strip() for e in text.split("+") if e.strip()]
+    added = 0
+
+    for entry in entries:
+
+        entry = entry.strip()
+        parts = entry.split(" ", 1)
+
+        # alleen productnaam
+        if len(parts) == 1:
+            product_text = parts[0].strip()
+            amount = None
+
+        # hoeveelheid + product
+        else:
             try:
                 amount = float(parts[0])
+                product_text = parts[1].strip()
             except:
-                continue
+                product_text = entry
+                amount = None
 
-            product_text = parts[1].strip()
-            key = find_product_by_text(product_text)
+        results = search_products(product_text)
 
-            if not key:
-                continue
+        exact_match = None
 
-            p = FOOD_LIBRARY[key]
-            kcal = calc_food_kcal(p, amount)
+        for r in results:
+            aliases = [a.lower() for a in r.get("alias", [])]
 
-            day_rec["food_items"].append({
-                "id": str(uuid.uuid4()),
-                "product": p["label"],
+            if (
+                r.get("name", "").lower() == product_text.lower()
+                or product_text.lower() in aliases
+            ):
+                exact_match = r
+                break
+
+        if not exact_match:
+            st.session_state.pending_new_product = {
+                "name": product_text,
                 "amount": amount,
-                "unit": p.get("unit", "gram"),
-                "kcal": kcal,
-                "timestamp": datetime.now().isoformat(),
-            })
+            }
+    return
 
-            added += 1
+    # standaardportie gebruiken als geen hoeveelheid is ingevoerd
+    if amount is None:
+        amount = exact_match.get("std_portion", 1)
 
-        if added > 0:
-            st.success(f"{added} product(en) toegevoegd")
-            save_data()
+    add_food_item_to_day(exact_match, amount)
+    st.toast(f"{exact_match['name']} toegevoegd")
+    added += 1
+
+# ------------------------------------------------------------
+# quick input form - ENTER werkt hier automatisch
+# ------------------------------------------------------------
+
+with st.form("quick_food_form", clear_on_submit=True):
+
+    quick_text = st.text_input(
+        "Typ bijvoorbeeld: 150 kipfilet",
+        disabled=day_closed,
+        placeholder="bijv: 100 avocado"
+    )
+
+    quick_submit = st.form_submit_button("Toevoegen via tekst")
+
+    if quick_submit and not day_closed:
+        process_quick_food_input(quick_text)
+
+
+# ------------------------------------------------------------
+# pending nieuw product - AI flow
+# ------------------------------------------------------------
+
+pending = st.session_state.pending_new_product
+
+if pending:
+
+    st.warning(f"Product '{pending['name']}' staat niet in de database.")
+
+    unit_choice = st.radio(
+        "Hoe wil je dit product opslaan?",
+        ["per stuk", "per 250 ml", "per 100 gram"],
+        horizontal=True,
+        key="pending_unit_choice"
+    )
+
+    col_ai, col_cancel = st.columns(2)
+
+    with col_ai:
+        if st.button(f"AI vult '{pending['name']}' in", key="ai_fill_missing_product"):
+
+            try:
+                with st.spinner("AI vult voedingswaarden in..."):
+
+                    new_product = ai_build_product(
+                        product_name=pending["name"],
+                        unit_choice=unit_choice
+                    )
+
+                    ok, result = add_product(new_product)
+
+                    if not ok:
+                        st.warning(result)
+                    else:
+                        saved_product = result
+
+                        add_food_item_to_day(saved_product, pending["amount"])
+                        save_data()
+
+                        st.session_state.pending_new_product = None
+
+                        st.success(
+                            f"Product '{saved_product['name']}' toegevoegd aan database en daglog."
+                        )
+                        st.rerun()
+
+            except Exception as e:
+                st.error(f"AI kon product niet invullen: {e}")
+
+    with col_cancel:
+        if st.button("Annuleren", key="cancel_missing_product"):
+            st.session_state.pending_new_product = None
             st.rerun()
-        else:
-            st.warning("Geen herkenbare producten gevonden.")
-# ------------------------------------------------------------
-# 8.1 — Product uit FOOD_LIBRARY toevoegen (UNIT-PROOF)
-# ------------------------------------------------------------
-
-with st.expander("➕ Eten toevoegen", expanded=False):
-
-    if day_closed:
-        st.info("Deze dag is afgesloten. Nieuwe invoer is niet meer mogelijk.")
 
 # ------------------------------------------------------------
-# Product selectie
+# 8.1b — RECENTE PRODUCTEN (STABIEL)
 # ------------------------------------------------------------
 
-    food_options = {v["label"]: k for k, v in FOOD_LIBRARY.items()}
+st.markdown("**Recent gegeten**")
 
-    if not food_options:
-        st.warning("Geen ingrediënten gevonden.")
-        st.stop()
+recent_products = []
+seen = set()
+
+# ------------------------------------------------------------
+# 1. eerst vandaag (directe state)
+# ------------------------------------------------------------
+
+for item in reversed(day_rec.get("food_items", [])):
+
+    name = item.get("product")
+
+    if name and name not in seen:
+        recent_products.append(name)
+        seen.add(name)
+
+    if len(recent_products) >= 5:
+        break
+
+
+# ------------------------------------------------------------
+# 2. daarna historische dagen
+# ------------------------------------------------------------
+
+today = date.today()
+
+for i in range(1, 7):
+
+    d = today - timedelta(days=i)
+    key = d.isoformat()
+
+    day = day_log.get(key)
+
+    if not day:
+        continue
+
+    for item in reversed(day.get("food_items", [])):
+
+        name = item.get("product")
+
+        if name and name not in seen:
+            recent_products.append(name)
+            seen.add(name)
+
+        if len(recent_products) >= 5:
+            break
+
+    if len(recent_products) >= 5:
+        break
+
+
+# ------------------------------------------------------------
+# UI
+# ------------------------------------------------------------
+
+if not recent_products:
+
+    st.caption("Nog geen recente producten.")
+
+else:
+
+    cols = st.columns(len(recent_products))
+
+    for i, name in enumerate(recent_products):
+
+        if cols[i].button(name, key=f"recent_product_{i}", disabled=day_closed):
+
+            p = next((x for x in PRODUCTS if x["name"] == name), None)
+
+            if p:
+
+                amount = float(
+                    p.get("std_portion")
+                    or p.get("default_portion_g")
+                    or 100
+                )
+
+                unit = str(p.get("unit") or "gram")
+
+                kcal = calculate_kcal(p, amount)
+
+                day_rec["food_items"].append({
+                    "id": str(uuid.uuid4()),
+                    "product_id": p.get("id"),
+                    "product": p["name"],
+                    "amount": amount,
+                    "unit": unit,
+                    "kcal": int(kcal),
+                    "timestamp": datetime.now().isoformat(),
+                })
+
+                save_data()
+                st.rerun()
+# ============================================================
+# HOOFDSTUK 10 — VANDAAG (ETEN + BEWEGING)
+# ============================================================
+
+st.markdown("---")
+st.subheader("Vandaag")
+
+food_items = day_rec.get("food_items", [])
+activity_items = day_rec.get("activity_items", [])
+
+if not food_items and not activity_items:
+    st.caption("Nog niets ingevoerd vandaag.")
+
+# ------------------------------------------------------------
+# ETEN
+# ------------------------------------------------------------
+
+if food_items:
+
+    st.markdown("**Eten**")
+
+    for item in food_items:
+
+        col1, col2 = st.columns([6,1])
+
+        with col1:
+            st.write(f"• {item['product']} | {item['amount']} {item['unit']} | {item['kcal']} kcal")
+
+        with col2:
+            if st.button("❌", key=f"del_food_{item['id']}", disabled=day_closed):
+                day_rec["food_items"] = [x for x in food_items if x["id"] != item["id"]]
+                save_data()
+                st.rerun()
+
+# ------------------------------------------------------------
+# BEWEGING
+# ------------------------------------------------------------
+
+if activity_items:
+
+    st.markdown("**Beweging**")
+
+    for item in activity_items:
+
+        col1, col2 = st.columns([6,1])
+
+        with col1:
+            st.write(f"• {item['activity']} | {item['duration_min']} min | {item['kcal']} kcal")
+
+        with col2:
+            if st.button("❌", key=f"del_act_{item['id']}", disabled=day_closed):
+                day_rec["activity_items"] = [x for x in activity_items if x["id"] != item["id"]]
+                save_data()
+                st.rerun()
+
+# ------------------------------------------------------------
+# TOTALEN
+# ------------------------------------------------------------
+
+if food_items or activity_items:
+
+    eaten = sum(x["kcal"] for x in food_items)
+    burned = sum(x["kcal"] for x in activity_items)
+
+    st.markdown("---")
+    st.write(f"**Totaal gegeten:** {int(eaten)} kcal")
+    st.write(f"**Totaal bewogen:** {int(burned)} kcal")
+# ============================================================
+# 8.2 — ETEN TOEVOEGEN
+# ============================================================
+
+st.markdown("### ➕ Eten toevoegen")
+
+with st.form("food_add_form"):
+
+    product_names = sorted([p["name"] for p in PRODUCTS])
 
     selected_label = st.selectbox(
         "Product",
-        sorted(food_options.keys()),
-        key="food_select",
-        disabled=day_closed
+        product_names,
+        index=None,
+        placeholder="Zoek product..."
     )
 
-    selected_key = food_options[selected_label]
-    p = FOOD_LIBRARY[selected_key]
+    amount = st.number_input(
+        "Hoeveelheid",
+        min_value=0.0,
+        max_value=2000.0,
+        value=100.0,
+        step=5.0
+    )
 
-    unit = str(p.get("unit", "gram")).lower()
+    submitted = st.form_submit_button("Toevoegen")
 
-# ------------------------------------------------------------
-# Snelle porties voor drank
-# ------------------------------------------------------------
+    if submitted and selected_label:
 
-    quick_amount = None
+        p = next((x for x in PRODUCTS if x["name"] == selected_label), None)
 
-    if unit == "ml":
+        if p:
 
-        quick_cols = st.columns(3)
+            unit = str(p.get("unit") or "gram").lower()
 
-        with quick_cols[0]:
-            if st.button("🍺 250 ml", disabled=day_closed):
-                quick_amount = 250.0
+            kcal = calculate_kcal(p, amount)
 
-        with quick_cols[1]:
-            if st.button("🍺 330 ml", disabled=day_closed):
-                quick_amount = 330.0
+            day_rec["food_items"].append({
+                "id": str(uuid.uuid4()),
+                "product_id": p.get("id"),
+                "product": p["name"],
+                "amount": float(amount),
+                "unit": unit,
+                "kcal": int(kcal),
+                "timestamp": datetime.now().isoformat(),
+            })
 
-        with quick_cols[2]:
-            if st.button("🍺 500 ml", disabled=day_closed):
-                quick_amount = 500.0
+            save_data()
+            st.success(f"{p['name']} toegevoegd ({int(kcal)} kcal)")
+            st.rerun()
 
-        st.caption("Snelle porties voor (drank)")
+# ============================================================
+# 8.3 — BEWEGING TOEVOEGEN
+# ============================================================
 
-    # ------------------------------------------------------------
-    # Default hoeveelheid
-    # ------------------------------------------------------------
+st.markdown("### ➕ Beweging toevoegen")
 
-    default_amount = 0.0
-
-    if unit == "gram" and p.get("std_portion_g"):
-        default_amount = float(p["std_portion_g"])
-
-    elif unit == "ml" and p.get("std_portion_ml"):
-        default_amount = float(p["std_portion_ml"])
-
-    elif unit == "cl" and p.get("std_portion_cl"):
-        default_amount = float(p["std_portion_cl"])
-
-    # ------------------------------------------------------------
-    # Hoeveelheid invoer
-    # ------------------------------------------------------------
-
-    if unit == "gram":
-
-        amount = st.number_input(
-            "Hoeveelheid (gram)",
-            min_value=0.0,
-            step=5.0,
-            value=default_amount,
-            disabled=day_closed
-        )
-
-    elif unit == "ml":
-
-        amount = st.number_input(
-            "Hoeveelheid (ml)",
-            min_value=0.0,
-            step=10.0,
-            value=default_amount,
-            disabled=day_closed
-        )
-
-    elif unit == "cl":
-
-        amount = st.number_input(
-            "Hoeveelheid (cl)",
-            min_value=0.0,
-            step=1.0,
-            value=default_amount,
-            disabled=day_closed
-        )
-
-    else:
-
-        amount = st.number_input(
-            f"Hoeveelheid ({unit})",
-            min_value=0.0,
-            step=1.0,
-            value=default_amount,
-            disabled=day_closed
-        )
-
-    # ------------------------------------------------------------
-    # Snelle drankknoppen overschrijven hoeveelheid
-    # ------------------------------------------------------------
-
-    if quick_amount is not None:
-        amount = quick_amount
-
-    # ------------------------------------------------------------
-    # Toevoegen
-    # ------------------------------------------------------------
-
-    if st.button("Toevoegen", key="add_food", disabled=day_closed):
-
-        if amount <= 0:
-            st.warning("Vul een geldige hoeveelheid in.")
-            st.stop()
-
-        kcal = calc_food_kcal(p, amount)
-
-        day_rec["food_items"].append({
-            "id": str(uuid.uuid4()),
-            "product": p["label"],
-            "amount": float(amount),
-            "unit": unit,
-            "kcal": int(kcal),
-            "timestamp": datetime.now().isoformat(),
-        })
-
-        st.success(f"{p['label']} toegevoegd ({int(kcal)} kcal)")
-        save_data()
-        st.rerun()
-# ------------------------------------------------------------
-# 8.3 — Beweging toevoegen
-# ------------------------------------------------------------
-
-with st.expander("➕ Beweging toevoegen", expanded=False):
-
-    if day_closed:
-        st.info("Deze dag is afgesloten. Nieuwe invoer is niet meer mogelijk.")
+with st.form("activity_add_form"):
 
     activity = st.selectbox(
         "Activiteit",
-        list(ACTIVITY_MET.keys()),
-        disabled=day_closed
+        list(ACTIVITY_MET.keys())
     )
 
     duration = st.number_input(
         "Duur (minuten)",
         min_value=0,
-        step=5,
-        disabled=day_closed
+        step=5
     )
 
     garmin_kcal = st.number_input(
-        "Of voer kcal direct in (Garmin)",
+        "Of voer Garmin kcal direct in",
         min_value=0,
-        step=10,
-        disabled=day_closed
+        step=10
     )
 
-    if st.button("Toevoegen", key="add_activity", disabled=day_closed):
+    submitted = st.form_submit_button("Toevoegen")
 
-        if duration <= 0:
-            st.warning("Vul een geldige duur in.")
+    if submitted:
+
+        # Garmin prioriteit
+        if garmin_kcal > 0:
+            kcal = int(garmin_kcal)
+
         else:
+
+            if duration <= 0:
+                st.warning("Vul een geldige duur in.")
+                st.stop()
+
             weight = get_current_weight()
             met = ACTIVITY_MET[activity]
             hours = duration / 60
+
             kcal = int(met * weight * hours * 0.8)
 
-            day_rec["activity_items"].append({
-                "id": str(uuid.uuid4()),
-                "activity": str(activity),
-                "duration_min": int(duration),
-                "kcal": int(kcal),
-                "timestamp": datetime.now().isoformat(),
-            })
+        day_rec["activity_items"].append({
+            "id": str(uuid.uuid4()),
+            "activity": str(activity),
+            "duration_min": int(duration),
+            "kcal": int(kcal),
+            "timestamp": datetime.now().isoformat(),
+        })
 
-            st.success(f"{activity.capitalize()} toegevoegd ({int(kcal)} kcal)")
-            save_data()
-            st.rerun()
+        save_data()
+
+        st.success(f"{activity} toegevoegd ({kcal} kcal)")
+        st.rerun()
+
 # ============================================================
 # HOOFDSTUK 8b — RECEPT GENERATOR (PROMPT-BASED, STABIEL)
 # ============================================================
@@ -1174,56 +1493,6 @@ if pending:
             save_data()
             st.rerun()
 
-# ============================================================
-# HOOFDSTUK 10 — OVERZICHT (ETEN + BEWEGING) MET VERWIJDEREN
-# ============================================================
-
-st.markdown("---")
-st.subheader("Eten vandaag")
-
-food_items = day_rec.get("food_items", [])
-if not food_items:
-    st.caption("Nog niets ingevoerd.")
-else:
-    total_food = 0
-    for idx, item in enumerate(food_items):
-        cols = st.columns([8, 2])
-        with cols[0]:
-            st.write(f"• {item['product']}  |  {item['amount']} {item['unit']}  |  {item['kcal']} kcal")
-            meta = item.get("meta", {})
-            if meta and isinstance(meta, dict) and meta.get("note"):
-                st.caption(str(meta["note"]))
-        with cols[1]:
-            if st.button("Verwijder", key=f"del_food_{item['id']}", disabled=day_closed):
-                day_rec["food_items"] = [x for x in day_rec["food_items"] if x.get("id") != item.get("id")]
-                save_data()
-                st.rerun()
-        total_food += int(item.get("kcal", 0))
-
-    st.divider()
-    st.write(f"**Totaal gegeten: {int(total_food)} kcal**")
-
-st.markdown("---")
-st.subheader("Beweging vandaag")
-
-activity_items = day_rec.get("activity_items", [])
-if not activity_items:
-    st.caption("Nog geen beweging ingevoerd.")
-else:
-    total_act = 0
-    for item in activity_items:
-        cols = st.columns([8, 2])
-        with cols[0]:
-            st.write(f"• {item['activity']}  |  {item['duration_min']} min  |  {item['kcal']} kcal")
-        with cols[1]:
-            if st.button("Verwijder", key=f"del_act_{item['id']}", disabled=day_closed):
-                day_rec["activity_items"] = [x for x in day_rec["activity_items"] if x.get("id") != item.get("id")]
-                save_data()
-                st.rerun()
-        total_act += int(item.get("kcal", 0))
-
-    st.divider()
-    st.write(f"**Totaal verbrand: {int(total_act)} kcal**")
 
 # ============================================================
 # HOOFDSTUK 11 — DAG AFRONDEN
@@ -1254,4 +1523,52 @@ if len(st.session_state.get("weight_log", [])) >= 1:
     dates = [w["date"] for w in weight_data]
     weights = [w["weight"] for w in weight_data]
 
-    st.line_chart({"Gewicht (kg)": weights}, x=dates)
+# =============================================================
+# Gewichtsgrafiek
+# =============================================================
+
+DAY_LOG_FILE = Path("data/day_log.json")
+
+if DAY_LOG_FILE.exists():
+
+    with open(DAY_LOG_FILE, "r", encoding="utf-8") as f:
+        day_log = json.load(f)
+
+    # huidige dag bepalen
+    from datetime import date
+    today = date.today().isoformat()
+
+    if today not in day_log:
+        day_log[today] = {}
+
+    day_data = day_log[today]
+
+    weights = []
+    dates = []
+
+    # sorteer de dagen chronologisch
+    for d in sorted(day_log.keys()):
+
+        data = day_log[d]
+
+        if "weight" in data:
+            dates.append(d)
+            weights.append(data["weight"])
+
+    if weights:
+
+        df_weight = pd.DataFrame({
+            "date": pd.to_datetime(dates),
+            "Gewicht (kg)": weights
+        })
+
+        df_weight = df_weight.set_index("date")
+
+        st.line_chart(df_weight)
+
+    else:
+        st.info("Nog geen gewichtsdata beschikbaar.")
+
+else:
+    st.info("Nog geen dagdata beschikbaar.")
+

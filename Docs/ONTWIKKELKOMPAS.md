@@ -47,6 +47,58 @@ ChatGPT acteert als engineer, niet als mede-gebruiker.
 7. Altijd uitleggen waar code moet komen
 8. Eerst alignment bij nieuwe features
 
+Samenwerkingsmodel Peet-projecten
+
+Peter – Product Owner
+
+bepaalt UX
+
+bepaalt functionaliteit
+
+test dagelijks gebruik
+
+beslist wanneer iets “goed genoeg” is
+
+ChatGPT – Architect / Engineer
+
+bewaakt systeemstructuur
+
+voorkomt technische schuld
+
+levert volledige codeblokken
+
+bewaakt de ontwikkelvolgorde
+
+voorkomt zijpaden
+
+Bouwregels
+
+stabiliteit eerst
+
+werkende code niet breken
+
+één wijziging tegelijk
+
+volledige codeblokken
+
+exact aangeven waar code moet komen
+
+eerst alignment bij nieuwe features
+
+geen zijpaden totdat issues opgelost zijn
+
+Ontwikkelstrategie
+
+We werken altijd volgens:
+
+Probleem → Analyse → Kleine wijziging → Test → Akkoord → Volgende stap
+
+Dus nooit:
+
+Probleem → 5 dingen tegelijk bouwen → hopen dat het werkt
+
+Dat voorkomt precies de chaos die vaak ontstaat in AI-gegenereerde codebases
+
 ---
 
 # Kernarchitectuur (mag niet breken)

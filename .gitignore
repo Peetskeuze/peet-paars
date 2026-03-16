@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 *.log
 .env
+data/*.json
+peet_data.json
+.venv/
+.streamlit/secrets.toml

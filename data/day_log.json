@@ -1,0 +1,46 @@
+{
+  "2026-03-09": {
+    "food_items": [
+      {
+        "id": "8850b7fd-9f24-49ac-b093-4f81abced454",
+        "product": "Kipfilet rauw",
+        "amount": 150.0,
+        "unit": "gram",
+        "kcal": 165,
+        "timestamp": "2026-03-09T14:17:58.197211"
+      }
+    ],
+    "activity_items": [],
+    "closed": false,
+    "program": "Paars",
+    "target_kcal": 1800
+  },
+  "2026-03-10": {
+    "food_items": [
+      {
+        "id": "02670083-0bfe-4298-a9a2-ba817a8bb82c",
+        "product": "Kipfilet rauw",
+        "amount": 150.0,
+        "unit": "gram",
+        "kcal": 165,
+        "timestamp": "2026-03-10T13:09:56.773797"
+      },
+      {
+        "id": "c3b9848b-0006-411d-9f1c-22c410c22f22",
+        "product": "Broccoli",
+        "amount": 200.0,
+        "unit": "gram",
+        "kcal": 68,
+        "timestamp": "2026-03-10T13:09:56.773797"
+      }
+    ],
+    "activity_items": [],
+    "closed": false,
+    "program": "Paars",
+    "target_kcal": 1800
+  },
+  "2026-03-11": {
+    "food_items": [],
+    "weight": 0.0
+  }
+}

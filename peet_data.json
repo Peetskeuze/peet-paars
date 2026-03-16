@@ -1,1 +1,333 @@
-{"2026-03-09": {"food_items": [{"id": "8850b7fd-9f24-49ac-b093-4f81abced454", "product": "Kipfilet rauw", "amount": 150.0, "unit": "gram", "kcal": 165, "timestamp": "2026-03-09T14:17:58.197211"}], "activity_items": [], "closed": false, "program": "Paars", "target_kcal": 1800}, "2026-03-10": {"food_items": [{"id": "02670083-0bfe-4298-a9a2-ba817a8bb82c", "product": "Kipfilet rauw", "amount": 150.0, "unit": "gram", "kcal": 165, "timestamp": "2026-03-10T13:09:56.773797"}, {"id": "c3b9848b-0006-411d-9f1c-22c410c22f22", "product": "Broccoli", "amount": 200.0, "unit": "gram", "kcal": 68, "timestamp": "2026-03-10T13:09:56.773797"}], "activity_items": [], "closed": false, "program": "Paars", "target_kcal": 1800}}
+{
+  "2026-03-11": {
+    "food_items": [
+      {
+        "id": "17efd194-2e8c-4945-b511-60455ddde483",
+        "product": "Zuurdesembrood",
+        "amount": 140.0,
+        "unit": "gram",
+        "kcal": 336,
+        "timestamp": "2026-03-11T15:18:14.544616"
+      },
+      {
+        "id": "b2400c07-eee4-46de-946f-2507392c89a1",
+        "product": "Goudse kaas 30+",
+        "amount": 30.0,
+        "unit": "gram",
+        "kcal": 82,
+        "timestamp": "2026-03-11T15:18:47.215922"
+      },
+      {
+        "id": "c734870c-9bec-46d5-b691-5341d5912d6c",
+        "product": "Ei gekookt",
+        "amount": 100.0,
+        "unit": "gram",
+        "kcal": 155,
+        "timestamp": "2026-03-11T15:19:10.789999"
+      },
+      {
+        "id": "983af50c-1b83-4c30-a5c2-c06fdbdac6cd",
+        "product": "Rosbief naturel",
+        "amount": 20.0,
+        "unit": "gram",
+        "kcal": 23,
+        "timestamp": "2026-03-11T15:20:44.523130"
+      }
+    ],
+    "activity_items": [],
+    "closed": false,
+    "program": "Paars",
+    "target_kcal": 1800
+  },
+  "2026-03-12": {
+    "food_items": [
+      {
+        "id": "108d6ce8-b3cd-4894-b000-59e68c6a40a8",
+        "product_id": "P039",
+        "product": "Ei gekookt",
+        "amount": 100.0,
+        "unit": "gram",
+        "kcal": 155,
+        "timestamp": "2026-03-12T10:45:41.266616"
+      },
+      {
+        "id": "2c3fcc08-4832-4988-b24c-8b21d8fefd51",
+        "product_id": "D007",
+        "product": "Halfvolle melk",
+        "amount": 2.0,
+        "unit": "ml",
+        "kcal": 0,
+        "timestamp": "2026-03-12T10:50:32.744267"
+      },
+      {
+        "id": "7b712172-ca71-46a1-97d0-358a08cd9697",
+        "product_id": "O010",
+        "product": "Avocado-olie",
+        "amount": 100.0,
+        "unit": "gram",
+        "kcal": 884,
+        "timestamp": "2026-03-12T11:04:13.413756"
+      },
+      {
+        "id": "ee1bc037-7a64-4e92-98f6-b02ea405e820",
+        "product_id": "avocado",
+        "product": "avocado",
+        "amount": 1.0,
+        "unit": "stuk",
+        "kcal": 240,
+        "timestamp": "2026-03-12T11:30:51.555148"
+      },
+      {
+        "id": "2a1323b1-c0d0-48af-9157-ca03bbcd21d9",
+        "product_id": "soep",
+        "product": "soep",
+        "amount": 500.0,
+        "unit": "ml",
+        "kcal": 300,
+        "timestamp": "2026-03-12T13:34:09.947380"
+      },
+      {
+        "id": "3e5cc1f6-b5de-4455-8c57-dc9794f91f64",
+        "product_id": "soep",
+        "product": "soep",
+        "amount": 200.0,
+        "unit": "ml",
+        "kcal": 120,
+        "timestamp": "2026-03-12T13:34:54.818063"
+      },
+      {
+        "id": "776981f3-51f4-49b1-a3b4-702d6402c64b",
+        "product_id": "P001",
+        "product": "Kipfilet rauw",
+        "amount": 150.0,
+        "unit": "gram",
+        "kcal": 165,
+        "timestamp": "2026-03-12T17:14:44.489107"
+      },
+      {
+        "id": "8387672e-e6e4-45a3-980a-2f7332d15cf9",
+        "product_id": "G006",
+        "product": "Snijbonen",
+        "amount": 200.0,
+        "unit": "gram",
+        "kcal": 62,
+        "timestamp": "2026-03-12T17:14:44.494106"
+      },
+      {
+        "id": "1006660e-c4d4-414a-bd24-dd3304bc0cc4",
+        "product_id": "F001",
+        "product": "Appel",
+        "amount": 1.0,
+        "unit": "gram",
+        "kcal": 0,
+        "timestamp": "2026-03-12T17:15:11.265637"
+      },
+      {
+        "id": "bc8edd03-ec06-4fa8-8112-df5e8325b9f1",
+        "product_id": "D033",
+        "product": "Gin tonic",
+        "amount": 1.0,
+        "unit": "ml",
+        "kcal": 0,
+        "timestamp": "2026-03-12T17:15:11.270158"
+      },
+      {
+        "id": "2e12ad5b-1e08-4c1d-8149-5b3123f56a6b",
+        "product_id": "P001",
+        "product": "Kipfilet rauw",
+        "amount": 150.0,
+        "unit": "gram",
+        "kcal": 165,
+        "timestamp": "2026-03-12T17:20:20.289165"
+      },
+      {
+        "id": "562e7c69-e7f7-4cd0-89f3-61a23bd168f7",
+        "product_id": "G006",
+        "product": "Snijbonen",
+        "amount": 200.0,
+        "unit": "gram",
+        "kcal": 62,
+        "timestamp": "2026-03-12T17:20:20.293742"
+      },
+      {
+        "id": "1b26eb6f-6e4e-4f75-876e-7c0695f4b766",
+        "product_id": "kip_200_bonen_2_boterham_kaas",
+        "product": "kip 200 bonen 2 boterham kaas",
+        "amount": 150.0,
+        "unit": "gram",
+        "kcal": 291,
+        "timestamp": "2026-03-12T17:30:18.604375"
+      },
+      {
+        "id": "4dc6502d-ae35-4010-8245-f6610e1a31c4",
+        "product_id": "P001",
+        "product": "Kipfilet rauw",
+        "amount": 150.0,
+        "unit": "gram",
+        "kcal": 165,
+        "timestamp": "2026-03-12T17:33:51.687942"
+      },
+      {
+        "id": "99d3da8d-1e6b-4fa7-a6f3-bebfeeeed1d2",
+        "product_id": "G006",
+        "product": "Snijbonen",
+        "amount": 200.0,
+        "unit": "gram",
+        "kcal": 62,
+        "timestamp": "2026-03-12T17:33:51.691933"
+      },
+      {
+        "id": "9162bdbd-48d5-4c62-97c8-8ece19d741b6",
+        "product_id": "kip_200_bonen_2_boterham_kaas",
+        "product": "kip 200 bonen 2 boterham kaas",
+        "amount": 2.0,
+        "unit": "gram",
+        "kcal": 3,
+        "timestamp": "2026-03-12T17:33:51.696495"
+      },
+      {
+        "id": "c29cda75-66f2-4201-81dc-14c54f3bca8c",
+        "product_id": "G031",
+        "product": "Champignons",
+        "amount": 200.0,
+        "unit": "gram",
+        "kcal": 44,
+        "timestamp": "2026-03-12T17:34:47.764703"
+      },
+      {
+        "id": "b97ae6c5-2735-4b04-8378-18dc7869f4d4",
+        "product_id": "krackers",
+        "product": "krackers",
+        "amount": 2.0,
+        "unit": "stuk",
+        "kcal": 60,
+        "timestamp": "2026-03-12T17:35:01.560545"
+      }
+    ],
+    "activity_items": [
+      {
+        "id": "5ead7999-af57-4cf4-bf09-4985db56984b",
+        "activity": "spinnen",
+        "duration_min": 60,
+        "kcal": 720,
+        "timestamp": "2026-03-12T09:04:08.981879"
+      },
+      {
+        "id": "55f39863-cb5d-4b45-adf9-1cb6c892e0f8",
+        "activity": "spinnen",
+        "duration_min": 60,
+        "kcal": 792,
+        "timestamp": "2026-03-12T16:36:34.902877"
+      }
+    ],
+    "closed": false,
+    "program": "Paars",
+    "target_kcal": 1800
+  },
+  "2026-03-13": {
+    "food_items": [
+      {
+        "id": "52cdfa0b-c38c-4a36-aafa-8636f8394e0c",
+        "product_id": "N001",
+        "product": "Amandelen",
+        "amount": 100.0,
+        "unit": "gram",
+        "kcal": 579,
+        "timestamp": "2026-03-13T15:02:04.767608"
+      },
+      {
+        "id": "be957f2e-a58f-4560-baa3-80849195506f",
+        "product_id": "P007",
+        "product": "Kabeljauw",
+        "amount": 150.0,
+        "unit": "gram",
+        "kcal": 122,
+        "timestamp": "2026-03-13T15:02:22.284631"
+      }
+    ],
+    "activity_items": [],
+    "closed": false,
+    "program": "Paars",
+    "target_kcal": 1800
+  },
+  "2026-03-16": {
+    "food_items": [
+      {
+        "id": "a3c5846f-ebd6-403d-8862-47fe5c54e162",
+        "product": "Diner recept: Gegrilde Kip met Groene Groenten en Avocado-tahinisaus",
+        "amount": 1,
+        "unit": "portie",
+        "kcal": 700,
+        "timestamp": "2026-03-16T11:17:05.533239",
+        "meta": {
+          "source": "peet_prompt",
+          "program": "Paars",
+          "meal_type": "Diner",
+          "ingredients": [
+            "200g kipfilet",
+            "150g broccoli",
+            "100g spinazie",
+            "1 avocado",
+            "2 eetlepels tahini",
+            "1 teentje knoflook",
+            "1 eetlepel citroensap",
+            "1 eetlepel olijfolie",
+            "zout naar smaak",
+            "peper naar smaak"
+          ],
+          "instructions": [
+            "Kipfilet kruiden met zout en peper en grillen tot gaar.",
+            "Broccoli stomen tot beetgaar en spinazie in een pan laten slinken.",
+            "Avocado, tahini, knoflook, citroensap en olijfolie pureren tot een saus.",
+            "Kip met groenten en saus serveren."
+          ],
+          "note": "Voor extra smaak, voeg een beetje cayennepeper toe aan de tahinisaus."
+        }
+      },
+      {
+        "id": "7ecfe769-d67a-454b-aae0-182413eb13a0",
+        "product": "Lunch recept: Kruidige Kip met Groentewrap",
+        "amount": 1,
+        "unit": "portie",
+        "kcal": 550,
+        "timestamp": "2026-03-16T11:16:41.775716",
+        "meta": {
+          "source": "peet_prompt",
+          "program": "Paars",
+          "meal_type": "Lunch",
+          "ingredients": [
+            "200g kipfilet",
+            "1 avocado",
+            "100g spinazie",
+            "100g paprika",
+            "50g rode ui",
+            "2 eetlepels Griekse yoghurt",
+            "1 eetlepel olijfolie",
+            "1 theelepel knoflookpoeder",
+            "1 theelepel paprikapoeder",
+            "2 volkoren wraps"
+          ],
+          "instructions": [
+            "Kipfilet met knoflookpoeder en paprikapoeder kruiden en in olijfolie bakken tot gaar.",
+            "Groenten (spinazie, paprika, rode ui) kort roerbakken.",
+            "Wraps beleggen met groenten, kip en een schep Griekse yoghurt.",
+            "Wraps oprollen en in dezelfde pan kort verwarmen tot ze goudbruin zijn."
+          ],
+          "note": "Varieer de groenten naar smaak of seizoensgebonden aanbod!"
+        }
+      }
+    ],
+    "activity_items": [
+      {
+        "id": "fa50ec86-4f83-4cad-9e04-b59c0150b192",
+        "activity": "krachttraining",
+        "duration_min": 45,
+        "kcal": 330,
+        "timestamp": "2026-03-16T11:17:40.355613"
+      }
+    ],
+    "closed": false,
+    "program": "Paars",
+    "target_kcal": 1800
+  }
+}
