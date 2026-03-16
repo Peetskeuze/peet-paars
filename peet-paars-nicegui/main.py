@@ -1,7 +1,3 @@
-# ============================================================
-# IMPORTS
-# ============================================================
-
 import sys
 import json
 import os
@@ -12,18 +8,8 @@ from pathlib import Path
 from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 
-# ------------------------------------------------------------
-# Project root zichtbaar maken (MOET VOOR core imports)
-# ------------------------------------------------------------
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.append(str(ROOT))
-
-# ------------------------------------------------------------
-# Core modules
-# ------------------------------------------------------------
 from core.profile_store import init_db, save_profile, load_profile
 
-# database initialiseren
 init_db()
 
 # ============================================================
