@@ -1,7 +1,17 @@
 from nicegui import ui
 
 ui.add_head_html('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">')
-ui.add_head_html('<style>.q-page-container{max-width:100% !important;}</style>')
+
+ui.add_head_html("""
+<style>
+.q-page-container {
+    max-width: 100% !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}
+</style>
+""")
+
 ui.colors(primary='#6E3BF7')
 
 ui.add_head_html("""
@@ -12,7 +22,6 @@ ui.add_head_html("""
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Peet Coach">
 """)
-
 
 import sys
 import json
