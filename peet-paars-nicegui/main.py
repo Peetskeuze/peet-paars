@@ -661,38 +661,50 @@ def refresh_ui() -> None:
     else:
         target_kcal = int(day_rec.get('target_kcal', DEFAULT_DAILY_TARGET_KCAL))
 
+
     eaten_kcal = sum_food_kcal(day_rec)
     burned_kcal = sum_activity_kcal(day_rec)
 
     netto_kcal = eaten_kcal - burned_kcal
     balance = netto_kcal - target_kcal
 
-    remaining_kcal = target_kcal - eaten_kcal + burned_kcal
-    if remaining_kcal < 0:
-        remaining_kcal = 0
+    remaining_kcal = max(target_kcal - netto_kcal, 0)
+
 
     # dashboard
-    remaining = max(target_kcal - netto_kcal, 0)
-    refs['remaining_big'].set_text(f'Nog {remaining} kcal vandaag')
-    refs['progress'].set_value(min(max(netto_kcal / target_kcal, 0), 1) if target_kcal else 0)
+    refs['remaining_big'].set_text(f'Nog {remaining_kcal} kcal vandaag')
+
+    refs['progress'].set_value(
+        min(max(netto_kcal / target_kcal, 0), 1) if target_kcal else 0
+    )
+
     refs['netto_val'].set_text(str(netto_kcal))
     refs['eaten_val'].set_text(str(eaten_kcal))
     refs['burned_val'].set_text(str(burned_kcal))
     refs['target_val'].set_text(str(target_kcal))
 
+
     if balance <= 0:
         refs['balance_badge'].set_text(f'{balance:+} kcal t.o.v. dagdoel')
-        refs['balance_badge'].classes(replace='w-full rounded-xl p-3 bg-green-100 text-green-900 text-sm')
+        refs['balance_badge'].classes(
+            replace='w-full rounded-xl p-3 bg-green-100 text-green-900 text-sm'
+        )
     else:
         refs['balance_badge'].set_text(f'{balance:+} kcal boven dagdoel')
-        refs['balance_badge'].classes(replace='w-full rounded-xl p-3 bg-orange-100 text-orange-900 text-sm')
+        refs['balance_badge'].classes(
+            replace='w-full rounded-xl p-3 bg-orange-100 text-orange-900 text-sm'
+        )
 
-    refs['coach_line'].set_text(coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal))
+
+    refs['coach_line'].set_text(
+        coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal)
+    )
 
     analysis = analyze_day(day_rec)
 
-    refs['peet_coach'].set_text(coach_advice(analysis['net'], target_kcal))
-
+    refs['peet_coach'].set_text(
+        coach_advice(analysis['net'], target_kcal)
+    )
     # ------------------------------------------------------------
     # gewichtsvoorspelling op basis van huidige dag
     # ------------------------------------------------------------
