@@ -1450,16 +1450,31 @@ with ui.column().classes(
     # HEADER
     # ------------------------------------------------------------
 
-    ui.label('Peet Coached').classes('text-3xl font-bold')
+    ui.label('Peet Coach').classes('text-3xl font-bold')
 
-    refs['date_picker'] = ui.date(
-        value=date.fromisoformat(app_state['selected_date']),
-        on_change=on_change_selected_date
-    ).props('mask="YYYY-MM-DD" minimal flat').classes('w-full text-sm')
+    with ui.row().classes('w-full items-center justify-between'):
 
-    refs['day_title'] = ui.label('').classes('text-2xl font-semibold')
-    refs['day_sub'] = ui.label('').classes('text-sm text-gray-500')
+        with ui.column():
+            refs['day_title'] = ui.label('').classes('text-xl font-semibold')
+            refs['day_sub'] = ui.label('').classes('text-xs text-gray-500')
 
+        ui.button(
+            '📅',
+            on_click=lambda: refs['date_dialog'].open()
+        ).props('flat round')
+
+
+    with ui.dialog() as refs['date_dialog'], ui.card():
+
+        refs['date_picker'] = ui.date(
+            value=date.fromisoformat(app_state['selected_date']),
+            on_change=on_change_selected_date
+        ).props('mask="YYYY-MM-DD"')
+
+        ui.button(
+            'Sluiten',
+            on_click=refs['date_dialog'].close
+        )
     # ------------------------------------------------------------
     # TABS
     # ------------------------------------------------------------
@@ -1516,7 +1531,9 @@ with ui.column().classes(
             with ui.card().classes('w-full'):
                 ui.label('Dagdashboard').classes('text-lg font-semibold')
 
-                refs['remaining_big'] = ui.label('').classes('text-xl font-semibold')
+                refs['remaining_big'] = ui.label('').classes(
+                    'text-xl font-semibold sticky top-0 bg-purple-100 text-purple-900 p-3 rounded-xl z-10'
+                )
 
                 refs['progress'] = ui.linear_progress(
                     value=0,
