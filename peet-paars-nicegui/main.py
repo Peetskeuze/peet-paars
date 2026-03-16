@@ -598,7 +598,7 @@ def save_profile_from_ui():
         "kcal_target": int(refs['profile_kcal_target'].value) if refs['profile_kcal_target'].value else None,
     }
 
-    save_user_profile(profile)
+    save_profile(profile)
 
     safe_notify("Profiel opgeslagen", "positive")
 
@@ -1455,7 +1455,7 @@ with ui.column().classes(
     refs['date_picker'] = ui.date(
         value=date.fromisoformat(app_state['selected_date']),
         on_change=on_change_selected_date
-    ).props('mask="YYYY-MM-DD"').classes('w-full')
+    ).props('mask="YYYY-MM-DD" minimal flat').classes('w-full text-sm')
 
     refs['day_title'] = ui.label('').classes('text-2xl font-semibold')
     refs['day_sub'] = ui.label('').classes('text-sm text-gray-500')
@@ -1463,8 +1463,6 @@ with ui.column().classes(
     # ------------------------------------------------------------
     # TABS
     # ------------------------------------------------------------
-
-
 
     with ui.tabs().classes('w-full') as refs['tabs']:
 
