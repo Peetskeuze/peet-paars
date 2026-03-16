@@ -1,6 +1,9 @@
 from nicegui import ui
 
-ui.add_head_html('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">')
+from nicegui import ui
+
+ui.add_head_html('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">')
+ui.add_head_html('<style>.q-page-container{max-width:100% !important;}</style>')
 ui.colors(primary='#6E3BF7')
 
 import sys
