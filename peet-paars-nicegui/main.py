@@ -19,7 +19,7 @@ load_dotenv()
 # ------------------------------------------------------------
 # Project root zichtbaar maken
 # ------------------------------------------------------------
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 # ============================================================
