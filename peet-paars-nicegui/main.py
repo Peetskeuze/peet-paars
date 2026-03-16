@@ -19,7 +19,7 @@ load_dotenv()
 # ------------------------------------------------------------
 # Project root zichtbaar maken
 # ------------------------------------------------------------
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parent
 sys.path.append(str(ROOT))
 
 # ============================================================
@@ -1683,9 +1683,10 @@ with ui.column().classes(
 
     refresh_ui()
 
+    import os
     port = int(os.environ.get("PORT", 8080))
 
     ui.run(
         host="0.0.0.0",
         port=port
-)
+    )
