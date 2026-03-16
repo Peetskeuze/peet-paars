@@ -1418,17 +1418,17 @@ ensure_day(app_state['selected_date'])
 # UI
 # ============================================================
 
-ui.page_title('Peet Paars')
+ui.page_title('Peet Coached')
 
 with ui.column().classes(
-    'w-full max-w-[460px] mx-auto p-4 gap-4 h-screen overflow-y-auto'
+    'w-full p-4 gap-4 min-h-screen overflow-y-auto'
 ):
 
     # ------------------------------------------------------------
     # HEADER
     # ------------------------------------------------------------
 
-    ui.label('Peet Paars').classes('text-3xl font-bold')
+    ui.label('Peet Coached').classes('text-3xl font-bold')
 
     refs['date_picker'] = ui.date(
         value=date.fromisoformat(app_state['selected_date']),
