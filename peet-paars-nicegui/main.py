@@ -8,6 +8,8 @@ from pathlib import Path
 from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 
+ROOT = Path(__file__).resolve().parent
+
 from core.profile_store import init_db, save_profile, load_profile
 
 init_db()
