@@ -591,7 +591,8 @@ def save_profile_from_ui():
         "height": int(refs['profile_height'].value),
         "current_weight": float(refs['profile_weight'].value),
         "target_weight": float(refs['profile_target'].value),
-        "weeks_to_goal": int(refs['profile_weeks'].value)
+        "weeks_to_goal": int(refs['profile_weeks'].value),
+        "kcal_target": int(refs['profile_kcal_target'].value) if refs['profile_kcal_target'].value else None,
     }
 
     save_user_profile(profile)
@@ -599,6 +600,7 @@ def save_profile_from_ui():
     safe_notify("Profiel opgeslagen", "positive")
 
     refresh_ui()
+
 
 def refresh_ui() -> None:
 
@@ -650,8 +652,12 @@ def refresh_ui() -> None:
 
     profile = load_user_profile()
 
-    if profile:
+    if profile and profile.get("kcal_target"):
+        target_kcal = int(profile["kcal_target"])
+
+    elif profile:
         target_kcal = calculate_daily_target(profile)
+
     else:
         target_kcal = int(day_rec.get('target_kcal', DEFAULT_DAILY_TARGET_KCAL))
 
@@ -666,7 +672,8 @@ def refresh_ui() -> None:
         remaining_kcal = 0
 
     # dashboard
-    refs['remaining_big'].set_text(f'Nog over: {target_kcal - netto_kcal} kcal')
+    remaining = max(target_kcal - netto_kcal, 0)
+    refs['remaining_big'].set_text(f'Nog {remaining} kcal vandaag')
     refs['progress'].set_value(min(max(netto_kcal / target_kcal, 0), 1) if target_kcal else 0)
     refs['netto_val'].set_text(str(netto_kcal))
     refs['eaten_val'].set_text(str(eaten_kcal))
