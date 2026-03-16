@@ -32,6 +32,9 @@ import asyncio
 from pathlib import Path
 from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
+from core.profile_store import init_db, save_profile, load_profile
+
+init_db()
 
 # ============================================================
 # PEET PAARS — NICEGUI FULL FIRST PASS
@@ -63,10 +66,10 @@ def load_user_profile():
 def calculate_daily_target(profile: dict) -> int:
 
     sex = profile.get('sex', 'male')
-    age = profile.get('age', 40)
-    height = profile.get('height', 175)
-    weight = profile.get('current_weight', 80)
-    target_weight = profile.get('target_weight', 75)
+    age = profile.get('age', 63)
+    height = profile.get('height', 186)
+    weight = profile.get('current_weight', 110)
+    target_weight = profile.get('target_weight', 100)
     weeks = profile.get('weeks_to_goal', 12)
 
     # BMR (Mifflin-St Jeor)
@@ -650,7 +653,7 @@ def refresh_ui() -> None:
     # kcal berekeningen
     # ------------------------------------------------------------
 
-    profile = load_user_profile()
+    profile = load_profile()
 
     if profile and profile.get("kcal_target"):
         target_kcal = int(profile["kcal_target"])
@@ -1491,7 +1494,7 @@ with ui.column().classes(
         with ui.tab_panel(refs['tab_today']):
 
             # profiel laden
-            profile = load_user_profile() or {}
+            profile = load_profile() or {}
 
             # berekend dagdoel van de app
             calculated_kcal = DEFAULT_DAILY_TARGET_KCAL
@@ -1681,7 +1684,7 @@ with ui.column().classes(
 
         with ui.tab_panel(refs['tab_settings']):
 
-            profile = load_user_profile() or {}
+            profile = load_profile() or {}
 
             with ui.card().classes('w-full'):
 
@@ -1695,17 +1698,17 @@ with ui.column().classes(
 
                 refs['profile_age'] = ui.number(
                     label='Leeftijd',
-                    value=profile.get('age', 40)
+                    value=profile.get('age', 63)
                 ).classes('w-full')
 
                 refs['profile_height'] = ui.number(
                     label='Lengte (cm)',
-                    value=profile.get('height', 180)
+                    value=profile.get('height', 186)
                 ).classes('w-full')
 
                 refs['profile_weight'] = ui.number(
                     label='Huidig gewicht (kg)',
-                    value=profile.get('current_weight', 90)
+                    value=profile.get('current_weight', 110)
                 ).classes('w-full')
 
                 refs['profile_target'] = ui.number(
