@@ -1,10 +1,18 @@
 from nicegui import ui
 
-from nicegui import ui
-
 ui.add_head_html('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">')
 ui.add_head_html('<style>.q-page-container{max-width:100% !important;}</style>')
 ui.colors(primary='#6E3BF7')
+
+ui.add_head_html("""
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#6E3BF7">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Peet Coach">
+""")
+
 
 import sys
 import json
@@ -1674,7 +1682,7 @@ with ui.column().classes(
     # weight dialog
     # ------------------------------------------------------------
 
-    with ui.dialog() as refs['weight_dialog'], ui.card().classes('w-full max-w-[520px]'):
+    with ui.dialog() as refs['weight_dialog'], ui.card().classes('w-full w-full'):
 
         ui.label('Gewichtsverloop').classes('text-lg font-semibold')
 
