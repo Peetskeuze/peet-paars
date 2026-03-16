@@ -1,3 +1,35 @@
+# ============================================================
+# IMPORTS
+# ============================================================
+
+import sys
+import json
+import os
+import re
+import uuid
+import asyncio
+from pathlib import Path
+from datetime import datetime, date, timedelta
+from dotenv import load_dotenv
+
+# ------------------------------------------------------------
+# Project root zichtbaar maken (MOET VOOR core imports)
+# ------------------------------------------------------------
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(ROOT))
+
+# ------------------------------------------------------------
+# Core modules
+# ------------------------------------------------------------
+from core.profile_store import init_db, save_profile, load_profile
+
+# database initialiseren
+init_db()
+
+# ============================================================
+# NICEGUI UI CONFIG
+# ============================================================
+
 from nicegui import ui
 
 ui.add_head_html('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">')
@@ -23,29 +55,11 @@ ui.add_head_html("""
 <meta name="apple-mobile-web-app-title" content="Peet Coach">
 """)
 
-import sys
-import json
-import os
-import re
-import uuid
-import asyncio
-from pathlib import Path
-from datetime import datetime, date, timedelta
-from dotenv import load_dotenv
-from core.profile_store import init_db, save_profile, load_profile
-
-init_db()
+load_dotenv()
 
 # ============================================================
-# PEET PAARS — NICEGUI FULL FIRST PASS
-# Gebaseerd op app_new.py, met bestaande core-modules
+# PEET COACH — NICEGUI APP
 # ============================================================
-
-# ------------------------------------------------------------
-# Project root zichtbaar maken
-# ------------------------------------------------------------
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.append(str(ROOT))
 
 # ============================================================
 # USER PROFILE (persoonlijk dagdoel)
