@@ -98,7 +98,7 @@ ACTIVITY_MET = {
     "fietsen tempo": 8,
     "wielrennen": 10,
     "spinnen": 9,
-    "krachttraining": 5,
+    "Sportschool": 5,
     "zwemmen": 8,
 }
 
@@ -1682,4 +1682,10 @@ with ui.column().classes(
 
 
     refresh_ui()
-    ui.run()
+
+    port = int(os.environ.get("PORT", 8080))
+
+    ui.run(
+        host="0.0.0.0",
+        port=port
+)
