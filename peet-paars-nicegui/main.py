@@ -121,6 +121,60 @@ except Exception:
     OPENAI_AVAILABLE = False
 
 
+#=============================================================
+# MOBIEL LAYOUT
+#=============================================================
+
+ui.add_css("""
+
+/* algemene achtergrond */
+body {
+    background:#f6f6f8;
+}
+
+/* app breedte */
+.nicegui-content {
+    max-width:430px;
+    margin:auto;
+}
+
+/* kaarten */
+.q-card {
+    border-radius:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+
+/* grote kcal kaart */
+.kcal-big {
+    font-size:28px;
+    font-weight:700;
+    color:#5b21b6;
+    background:#ede9fe;
+    padding:18px;
+    border-radius:16px;
+    text-align:center;
+}
+
+/* titel */
+.app-title {
+    font-size:26px;
+    font-weight:700;
+    margin-bottom:4px;
+}
+
+/* datum */
+.app-date {
+    font-size:14px;
+    color:#6b7280;
+}
+
+/* bottom navigation */
+.bottom-nav {
+    font-size:14px;
+    font-weight:600;
+}
+
+""")
 
 # ============================================================
 # CANON SETTINGS
@@ -737,7 +791,7 @@ def refresh_ui() -> None:
 
 
     # dashboard
-    refs['remaining_big'].set_text(f'Nog {remaining_kcal} kcal vandaag')
+    refs['remaining_big'].set_text(f'{remaining_kcal} kcal over')
 
     refs['progress'].set_value(
         min(max(netto_kcal / target_kcal, 0), 1) if target_kcal else 0
@@ -1593,17 +1647,35 @@ with ui.column().classes(
 
             with ui.card().classes('w-full gap-2'):
 
-                ui.label('Dagdashboard').classes('text-lg font-semibold')
+                ui.label('Dagprogress').classes('text-lg font-semibold')
 
                 refs['remaining_big'] = ui.label('').classes(
-                    'text-3xl font-bold text-purple-900 bg-purple-100 p-6 rounded-2xl text-center'
+                    'text-2xl font-bold text-purple-900 text-center'
                 )
 
                 refs['progress'] = ui.linear_progress(
                     value=0,
                     show_value=False,
-                    color='green'
+                    color='purple'
                 ).classes('w-full h-3 rounded')
+
+                refs['progress_label'] = ui.label('').classes(
+                    'text-sm text-gray-600 text-center'
+                )
+
+                with ui.grid(columns=2).classes('w-full gap-y-3 text-base mt-2'):
+
+                    ui.label('Gegeten')
+                    refs['eaten_val'] = ui.label('0').classes('text-right')
+
+                    ui.label('Bewogen')
+                    refs['burned_val'] = ui.label('0').classes('text-right')
+
+                    ui.label('Dagdoel')
+                    refs['target_val'] = ui.label('0').classes('text-right')
+
+                    ui.label('Netto')
+                    refs['netto_val'] = ui.label('0').classes('text-right')
 
                 with ui.grid(columns=2).classes('w-full gap-y-3 text-base mt-2'):
 
