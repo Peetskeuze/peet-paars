@@ -1756,8 +1756,8 @@ with ui.column().classes(
     # ------------------------------------------------------------
 
     with ui.row().classes(
-        'fixed bottom-0 left-0 right-0 bg-white border-t justify-around items-center p-2 max-w-md mx-auto'
-    ):
+        'fixed bottom-0 left-0 right-0 bg-white border-t justify-around items-center p-3 max-w-md mx-auto shadow-lg'
+    ).style('padding-bottom: env(safe-area-inset-bottom);'):
 
         ui.button(
             'Vandaag',
