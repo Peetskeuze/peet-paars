@@ -1699,32 +1699,30 @@ with ui.column().classes(
                     color='purple'
                 ).classes('w-full h-3 rounded')
 
+                refs['progress'] = ui.linear_progress(
+                    value=0,
+                    show_value=False,
+                    color='purple'
+                ).classes('w-full h-3 rounded')
+
                 refs['progress_label'] = ui.label('').classes(
                     'text-sm text-gray-600 text-center'
                 )
 
-
-                with ui.grid(columns=2).classes('w-full gap-y-3 text-base mt-2'):
+                with ui.grid(columns=2).classes('w-full max-w-[420px] mx-auto gap-y-3 text-base mt-2'):
 
                     ui.label('Gegeten')
-                    refs['eaten_val'] = ui.label('0').classes('text-right')
+                    refs['eaten_val'] = ui.label('').classes('text-right')
 
                     ui.label('Bewogen')
-                    refs['burned_val'] = ui.label('0').classes('text-right')
+                    refs['burned_val'] = ui.label('').classes('text-right')
 
                     ui.label('Dagdoel')
-                    refs['target_val'] = ui.label(str(daily_goal)).classes('text-right')
+                    refs['target_val'] = ui.label('').classes('text-right')
 
                     ui.label('Netto')
-                    refs['netto_val'] = ui.label('0').classes('text-right')
+                    refs['netto_val'] = ui.label('').classes('text-right')
 
-                refs['balance_badge'] = ui.label('').classes(
-                    'w-full rounded-xl p-2 text-sm text-center'
-                )
-
-                refs['coach_line'] = ui.label('').classes(
-                    'text-xs text-gray-600 text-center'
-                )
         # =========================================================
         # TAB 2 — INVOER
         # =========================================================
