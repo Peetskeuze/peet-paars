@@ -1545,7 +1545,7 @@ with ui.column().classes(
                 ui.label('Dagdashboard').classes('text-lg font-semibold')
 
                 refs['remaining_big'] = ui.label('').classes(
-                    'text-2xl font-bold text-purple-900 bg-purple-100 p-3 rounded-xl text-center'
+                    'text-3xl font-bold text-purple-900 bg-purple-100 p-6 rounded-2xl text-center'
                 )
 
                 refs['progress'] = ui.linear_progress(
@@ -1554,7 +1554,7 @@ with ui.column().classes(
                     color='green'
                 ).classes('w-full h-3 rounded')
 
-                with ui.grid(columns=2).classes('w-full gap-y-2 text-sm'):
+                with ui.grid(columns=2).classes('w-full gap-y-3 text-base mt-2'):
 
                     ui.label('Gegeten')
                     refs['eaten_val'] = ui.label('0').classes('text-right')
