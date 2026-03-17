@@ -1699,19 +1699,6 @@ with ui.column().classes(
                     'text-sm text-gray-600 text-center'
                 )
 
-                with ui.grid(columns=2).classes('w-full gap-y-3 text-base mt-2'):
-
-                    ui.label('Gegeten')
-                    refs['eaten_val'] = ui.label('0').classes('text-right')
-
-                    ui.label('Bewogen')
-                    refs['burned_val'] = ui.label('0').classes('text-right')
-
-                    ui.label('Dagdoel')
-                    refs['target_val'] = ui.label('0').classes('text-right')
-
-                    ui.label('Netto')
-                    refs['netto_val'] = ui.label('0').classes('text-right')
 
                 with ui.grid(columns=2).classes('w-full gap-y-3 text-base mt-2'):
 
