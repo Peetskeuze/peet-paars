@@ -1540,36 +1540,41 @@ with ui.column().classes(
                 refs['today_totals'] = ui.label('').classes('text-sm font-semibold')
 
 
-            with ui.card().classes('w-full'):
+            with ui.card().classes('w-full gap-2'):
+
                 ui.label('Dagdashboard').classes('text-lg font-semibold')
 
                 refs['remaining_big'] = ui.label('').classes(
-                    'text-xl font-semibold sticky top-0 bg-purple-100 text-purple-900 p-3 rounded-xl z-10'
+                    'text-2xl font-bold text-purple-900 bg-purple-100 p-3 rounded-xl text-center'
                 )
 
                 refs['progress'] = ui.linear_progress(
                     value=0,
                     show_value=False,
                     color='green'
-                ).classes('w-full h-4 rounded')
+                ).classes('w-full h-3 rounded')
 
-                with ui.grid(columns=2).classes('w-full gap-y-1'):
-
-                    ui.label('Netto kcal')
-                    refs['netto_val'] = ui.label('0')
+                with ui.grid(columns=2).classes('w-full gap-y-2 text-sm'):
 
                     ui.label('Gegeten')
-                    refs['eaten_val'] = ui.label('0')
+                    refs['eaten_val'] = ui.label('0').classes('text-right')
 
                     ui.label('Bewogen')
-                    refs['burned_val'] = ui.label('0')
+                    refs['burned_val'] = ui.label('0').classes('text-right')
 
                     ui.label('Dagdoel')
-                    refs['target_val'] = ui.label(str(daily_goal))
+                    refs['target_val'] = ui.label(str(daily_goal)).classes('text-right')
 
-                refs['balance_badge'] = ui.label('').classes('w-full rounded-xl p-3 text-sm')
-                refs['coach_line'] = ui.label('').classes('text-sm text-gray-600')
+                    ui.label('Netto')
+                    refs['netto_val'] = ui.label('0').classes('text-right')
 
+                refs['balance_badge'] = ui.label('').classes(
+                    'w-full rounded-xl p-2 text-sm text-center'
+                )
+
+                refs['coach_line'] = ui.label('').classes(
+                    'text-xs text-gray-600 text-center'
+                )
         # =========================================================
         # TAB 2 — INVOER
         # =========================================================
