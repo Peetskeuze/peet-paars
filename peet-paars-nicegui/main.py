@@ -1491,31 +1491,63 @@ with ui.column().classes(
             on_click=refs['date_dialog'].close
         )
 
+# ------------------------------------------------------------
+# TABS
+# ------------------------------------------------------------
+
+with ui.tabs().classes('w-full hidden') as refs['tabs']:
+
+    refs['tab_today'] = ui.tab('Vandaag')
+    refs['tab_input'] = ui.tab('Invoer')
+    refs['tab_coach'] = ui.tab('Coach')
+    refs['tab_settings'] = ui.tab('Instellingen')
+
+refs['tabs'].on_value_change(
+    lambda e: app_state.update({
+        'active_tab':
+            'input' if e.value == refs['tab_input']
+            else 'coach' if e.value == refs['tab_coach']
+            else 'today'
+    })
+)
+
     # ------------------------------------------------------------
-    # TABS
+    # TAB PANELS
     # ------------------------------------------------------------
-
-    with ui.tabs().classes('w-full hidden') as refs['tabs']:
-
-        refs['tab_today'] = ui.tab('Vandaag')
-        refs['tab_input'] = ui.tab('Invoer')
-        refs['tab_coach'] = ui.tab('Coach')
-        refs['tab_settings'] = ui.tab('Instellingen')
-
-    refs['tabs'].on_value_change(
-        lambda e: app_state.update({
-            'active_tab':
-                'input' if e.value == refs['tab_input']
-                else 'coach' if e.value == refs['tab_coach']
-                else 'today'
-        })
-    )
 
     with ui.tab_panels(refs['tabs'], value=refs['tab_today']).classes('w-full'):
 
+        # =========================================================
+        # TAB 1 — VANDAAG
+        # =========================================================
+        with ui.tab_panel(refs['tab_today']):
+            pass
+
+        # =========================================================
+        # TAB 2 — INVOER
+        # =========================================================
+        with ui.tab_panel(refs['tab_input']):
+            pass
+
+        # =========================================================
+        # TAB 3 — COACH
+        # =========================================================
+        with ui.tab_panel(refs['tab_coach']):
+            pass
+
+        # =========================================================
+        # TAB 4 — INSTELLINGEN
+        # =========================================================
+        with ui.tab_panel(refs['tab_settings']):
+            pass
+
+
+    # ------------------------------------------------------------
+    # BOTTOM NAVIGATION
+    # ------------------------------------------------------------
+
     with ui.row().classes(
-        'fixed bottom-0 left-0 right-0 bg-white border-t '
-        'justify-around items-center p-2 max-w-md mx-auto'
+        'fixed bottom-0 left-0 right-0 bg-white border-t justify-around items-center p-2 max-w-md mx-auto'
     ):
 
         ui.button(
@@ -1537,11 +1569,11 @@ with ui.column().classes(
             'Profiel',
             on_click=lambda: refs['tabs'].set_value(refs['tab_settings'])
         ).props('flat')
+  
 
-
-        # =========================================================
-        # TAB 1 — VANDAAG
-        # =========================================================
+    # =========================================================
+    # TAB 1 — VANDAAG
+    # =========================================================
 
         with ui.tab_panel(refs['tab_today']):
 
