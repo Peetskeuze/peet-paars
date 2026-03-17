@@ -23,9 +23,9 @@ init_db()
 # NICEGUI UI CONFIG
 # ============================================================
 
-
-
-ui.add_head_html('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">')
+ui.add_head_html("""
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+""")
 
 ui.add_head_html("""
 <style>
