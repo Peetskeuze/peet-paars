@@ -1453,10 +1453,10 @@ ensure_day(app_state['selected_date'])
 # UI
 # ============================================================
 
-ui.page_title('Peet Coached')
+ui.page_title('Peet Coach')
 
 with ui.column().classes(
-    'w-full p-4 gap-4 min-h-screen overflow-y-auto'
+    'w-full max-w-md mx-auto p-4 gap-4 min-h-screen overflow-y-auto'
 ):
 
     # ------------------------------------------------------------
@@ -1488,6 +1488,7 @@ with ui.column().classes(
             'Sluiten',
             on_click=refs['date_dialog'].close
         )
+
     # ------------------------------------------------------------
     # TABS
     # ------------------------------------------------------------
@@ -1508,9 +1509,7 @@ with ui.column().classes(
         })
     )
 
-
     with ui.tab_panels(refs['tabs'], value=refs['tab_today']).classes('w-full'):
-
 
 
         # =========================================================
