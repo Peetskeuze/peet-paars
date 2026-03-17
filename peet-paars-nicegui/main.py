@@ -1495,7 +1495,7 @@ with ui.column().classes(
     # TABS
     # ------------------------------------------------------------
 
-    with ui.tabs().classes('w-full') as refs['tabs']:
+    with ui.tabs().classes('w-full hidden') as refs['tabs']:
 
         refs['tab_today'] = ui.tab('Vandaag')
         refs['tab_input'] = ui.tab('Invoer')
@@ -1512,6 +1512,31 @@ with ui.column().classes(
     )
 
     with ui.tab_panels(refs['tabs'], value=refs['tab_today']).classes('w-full'):
+
+    with ui.row().classes(
+        'fixed bottom-0 left-0 right-0 bg-white border-t '
+        'justify-around items-center p-2 max-w-md mx-auto'
+    ):
+
+        ui.button(
+            'Vandaag',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_today'])
+        ).props('flat')
+
+        ui.button(
+            'Invoer',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_input'])
+        ).props('flat')
+
+        ui.button(
+            'Coach',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_coach'])
+        ).props('flat')
+
+        ui.button(
+            'Profiel',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_settings'])
+        ).props('flat')
 
 
         # =========================================================
