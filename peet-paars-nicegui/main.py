@@ -7,17 +7,19 @@ import asyncio
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
-from nicegui import ui
+from nicegui import ui, app
 from dotenv import load_dotenv
-
-from nicegui import app
-
-app.add_static_files('/static', 'peet-paars-nicegui/static')
 
 load_dotenv()
 
-
+# pad naar projectmap
 ROOT = Path(__file__).resolve().parent
+
+# static map
+STATIC_DIR = ROOT / "static"
+
+app.add_static_files('/static', str(STATIC_DIR))
+
 
 from core.profile_store import init_db, save_profile, load_profile
 
@@ -843,21 +845,23 @@ def refresh_ui() -> None:
     refs['target_val'].set_text(str(target_kcal))
 
 
-    if balance <= 0:
-        refs['balance_badge'].set_text(f'{balance:+} kcal t.o.v. dagdoel')
-        refs['balance_badge'].classes(
-            replace='w-full rounded-xl p-3 bg-green-100 text-green-900 text-sm'
-        )
-    else:
-        refs['balance_badge'].set_text(f'{balance:+} kcal boven dagdoel')
-        refs['balance_badge'].classes(
-            replace='w-full rounded-xl p-3 bg-orange-100 text-orange-900 text-sm'
-        )
+    if 'balance_badge' in refs:
+        if balance <= 0:
+            refs['balance_badge'].set_text(f'{balance:+} kcal t.o.v. dagdoel')
+            refs['balance_badge'].classes(
+                replace='w-full rounded-xl p-3 bg-green-100 text-green-900 text-sm'
+            )
+        else:
+            refs['balance_badge'].set_text(f'{balance:+} kcal boven dagdoel')
+            refs['balance_badge'].classes(
+                replace='w-full rounded-xl p-3 bg-orange-100 text-orange-900 text-sm'
+            )
 
 
-    refs['coach_line'].set_text(
-        coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal)
-    )
+    if 'coach_line' in refs:
+        refs['coach_line'].set_text(
+            coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal)
+        )
 
     analysis = analyze_day(day_rec)
 
@@ -1945,7 +1949,7 @@ with ui.column().classes(
         ).props('outline')
 
 
-    refresh_ui()
+    ui.timer(0.1, refresh_ui, once=True)
 
     import os
     port = int(os.environ.get("PORT", 8080))
