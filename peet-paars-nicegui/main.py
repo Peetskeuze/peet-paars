@@ -40,7 +40,7 @@ ui.add_head_html("""
 ui.colors(primary='#6E3BF7')
 
 ui.add_head_html("""
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#6E3BF7">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -51,7 +51,7 @@ ui.add_head_html("""
 ui.add_head_html("""
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
+  navigator.serviceWorker.register('/static/sw.js');
 }
 </script>
 """)
