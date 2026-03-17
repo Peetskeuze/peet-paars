@@ -1463,18 +1463,20 @@ with ui.column().classes(
     # HEADER
     # ------------------------------------------------------------
 
-    ui.label('Peet Coach').classes('text-3xl font-bold')
-
     with ui.row().classes('w-full items-center justify-between'):
 
-        with ui.column():
-            refs['day_title'] = ui.label('').classes('text-xl font-semibold')
-            refs['day_sub'] = ui.label('').classes('text-xs text-gray-500')
+        ui.label('Peet Coach').classes('text-2xl font-bold')
 
         ui.button(
             '📅',
             on_click=lambda: refs['date_dialog'].open()
         ).props('flat round')
+
+
+    with ui.column():
+
+        refs['day_title'] = ui.label('').classes('text-lg font-semibold')
+        refs['day_sub'] = ui.label('').classes('text-xs text-gray-500')
 
 
     with ui.dialog() as refs['date_dialog'], ui.card():
