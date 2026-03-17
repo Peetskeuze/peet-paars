@@ -10,6 +10,10 @@ from datetime import datetime, date, timedelta
 from nicegui import ui
 from dotenv import load_dotenv
 
+from nicegui import app
+
+app.add_static_files('/static', 'static')
+
 load_dotenv()
 
 
