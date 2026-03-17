@@ -56,6 +56,42 @@ if ('serviceWorker' in navigator) {
 </script>
 """)
 
+ui.add_head_html("""
+<script>
+
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  const btn = document.createElement('button');
+  btn.innerText = '📲 Installeer Peet Coach';
+  btn.style.position = 'fixed';
+  btn.style.bottom = '80px';
+  btn.style.left = '50%';
+  btn.style.transform = 'translateX(-50%)';
+  btn.style.padding = '12px 20px';
+  btn.style.background = '#6E3BF7';
+  btn.style.color = 'white';
+  btn.style.border = 'none';
+  btn.style.borderRadius = '12px';
+  btn.style.zIndex = '9999';
+
+  btn.onclick = async () => {
+    btn.remove();
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  };
+
+  document.body.appendChild(btn);
+});
+
+</script>
+""")
+
+
 # ============================================================
 # PEET COACH — NICEGUI APP
 # ============================================================
