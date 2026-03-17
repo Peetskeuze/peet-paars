@@ -6,7 +6,12 @@ import uuid
 import asyncio
 from pathlib import Path
 from datetime import datetime, date, timedelta
+
+from nicegui import ui
 from dotenv import load_dotenv
+
+load_dotenv()
+
 
 ROOT = Path(__file__).resolve().parent
 
@@ -18,7 +23,7 @@ init_db()
 # NICEGUI UI CONFIG
 # ============================================================
 
-from nicegui import ui
+
 
 ui.add_head_html('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">')
 
@@ -43,7 +48,13 @@ ui.add_head_html("""
 <meta name="apple-mobile-web-app-title" content="Peet Coach">
 """)
 
-load_dotenv()
+ui.add_head_html("""
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+</script>
+""")
 
 # ============================================================
 # PEET COACH — NICEGUI APP
