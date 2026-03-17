@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from nicegui import app
 
-app.add_static_files('/static', 'static')
+app.add_static_files('/static', 'peet-paars-nicegui/static')
 
 load_dotenv()
 
