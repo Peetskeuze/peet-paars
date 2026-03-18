@@ -10,18 +10,20 @@ from datetime import datetime, date, timedelta
 from nicegui import ui, app
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 # pad naar projectmap
 ROOT = Path(__file__).resolve().parent
 
-# static map
-STATIC_DIR = ROOT / "static"
+from fastapi.responses import FileResponse
 
+STATIC_DIR = ROOT / "static"
 app.add_static_files('/static', str(STATIC_DIR))
 
-# service worker op root (BELANGRIJK voor PWA)
-app.add_static_files('/', str(ROOT))
+@app.get('/sw.js')
+def service_worker():
+    return FileResponse(ROOT / 'sw.js')
 
 
 from core.profile_store import init_db, save_profile, load_profile
@@ -33,10 +35,16 @@ init_db()
 # ============================================================
 
 ui.add_head_html("""
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-""")
 
-ui.add_head_html("""
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#6E3BF7">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Peet Coach">
+
 <style>
 .q-page-container {
     max-width: 100% !important;
@@ -44,30 +52,14 @@ ui.add_head_html("""
     padding-right: 8px !important;
 }
 </style>
-""")
 
-ui.colors(primary='#6E3BF7')
-
-ui.add_head_html("""
-<link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#6E3BF7">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="Peet Coach">
-""")
-
-ui.add_head_html("""
 <script>
+// SERVICE WORKER
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
-</script>
-""")
 
-ui.add_head_html("""
-<script>
-
+// INSTALL PROMPT FORCE
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -96,11 +88,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
   document.body.appendChild(btn);
 });
-
 </script>
+
 """)
-
-
 # ============================================================
 # PEET COACH — NICEGUI APP
 # ============================================================
