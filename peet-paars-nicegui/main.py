@@ -23,7 +23,7 @@ app.add_static_files('/static', str(STATIC_DIR))
 
 @app.get('/sw.js')
 def service_worker():
-    return FileResponse(ROOT / 'sw.js')
+    return FileResponse(STATIC_DIR / 'sw.js')
 
 
 from core.profile_store import init_db, save_profile, load_profile
@@ -265,6 +265,13 @@ refs = {}
 # ============================================================
 # HELPERS
 # ============================================================
+
+def update_nav_style(active: str):
+    for name, btn in refs.get('nav_buttons', {}).items():
+        if name == active:
+            btn.classes('text-purple-600')
+        else:
+            btn.classes('text-gray-400')
 
 def safe_notify(message: str, kind: str = 'info') -> None:
     ui.notify(message, type=kind)
@@ -857,75 +864,17 @@ def refresh_ui() -> None:
                 replace='w-full rounded-xl p-3 bg-orange-100 text-orange-900 text-sm'
             )
 
-
-if 'coach_line' in refs:
-    refs['coach_line'].set_text(
-        coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal)
-    )
-
-    analysis = analyze_day(day_rec)
-
-    refs['peet_coach'].set_text(
-        coach_advice(analysis['net'], target_kcal)
-    )
-    # ------------------------------------------------------------
-    # gewichtsvoorspelling op basis van huidige dag
-    # ------------------------------------------------------------
-
-    daily_balance = target_kcal - netto_kcal
-    weekly_balance = daily_balance * 7
-    kg_per_week = weekly_balance / 7700
-
-    if kg_per_week > 0.05:
-        refs['coach_target'].set_text(
-            f"Dagdoel: {target_kcal} kcal • met vandaag ga je ± {kg_per_week:.2f} kg per week afvallen"
+    if 'coach_line' in refs:
+        refs['coach_line'].set_text(
+            coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal)
         )
 
-    elif kg_per_week < -0.05:
-        refs['coach_target'].set_text(
-            f"Dagdoel: {target_kcal} kcal • met vandaag ga je ± {abs(kg_per_week):.2f} kg per week aankomen"
+    if 'peet_coach' in refs:
+        analysis = analyze_day(day_rec)
+        refs['peet_coach'].set_text(
+            coach_advice(analysis['net'], target_kcal)
         )
 
-    else:
-        refs['coach_target'].set_text(
-            f"Dagdoel: {target_kcal} kcal • gewicht blijft ongeveer stabiel"
-        )
-
-    nutrition = analyze_nutrition(day_rec.get('food_items', []))
-
-    # eerst checken of dagdoel al bereikt is
-    if netto_kcal >= target_kcal:
-        refs['hunger'].set_text('Je zit boven je dagdoel. Eten is nu niet nodig.')
-    else:
-        refs['hunger'].set_text(predict_hunger(nutrition))
-    hours_since = hours_since_last_meal(day_rec.get('food_items', []))
-    if hours_since is None:
-        refs['hours_since'].set_text('')
-    elif hours_since > 4:
-        refs['hours_since'].set_text(f'Laatste maaltijd {hours_since} uur geleden.')
-    else:
-        refs['hours_since'].set_text(f'Laatste maaltijd {hours_since} uur geleden.')
-
-    # week koers
-    today_dt = date.today()
-    week_start = today_dt - timedelta(days=today_dt.weekday())
-    week_balance = 0
-    days_counted = 0
-    for iso_day, d in app_state.get('days', {}).items():
-        d_date = date.fromisoformat(iso_day)
-        if week_start <= d_date <= today_dt:
-            eaten = sum_food_kcal(d)
-            burned = sum_activity_kcal(d)
-            target = int(d.get('target_kcal', DEFAULT_DAILY_TARGET_KCAL))
-            net = eaten - burned
-            week_balance += net - target
-            days_counted += 1
-    if days_counted == 0:
-        refs['week_balance'].set_text('Nog geen dagen geregistreerd deze week.')
-        refs['week_note'].set_text('')
-    else:
-        refs['week_balance'].set_text(f'{week_balance:+} kcal deze week')
-        refs['week_note'].set_text('Je week ligt op koers.' if week_balance <= 0 else 'Een paar lichtere keuzes brengen je weer op koers.')
 
     # vandaag
     refs['today_food_col'].clear()
@@ -1925,14 +1874,39 @@ with ui.column().classes(
     # BOTTOM NAVIGATION
     # ------------------------------------------------------------
 
+    refs['nav_buttons'] = {}
+
     with ui.row().classes(
         'fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg justify-around items-center p-3'
     ):
 
-        ui.button('Vandaag', on_click=lambda: refs['tabs'].set_value(refs['tab_today'])).props('flat')
-        ui.button('Invoer', on_click=lambda: refs['tabs'].set_value(refs['tab_input'])).props('flat')
-        ui.button('Coach', on_click=lambda: refs['tabs'].set_value(refs['tab_coach'])).props('flat')
-        ui.button('Profiel', on_click=lambda: refs['tabs'].set_value(refs['tab_settings'])).props('flat')
+        refs['nav_buttons']['today'] = ui.button('🍽️',
+            on_click=lambda: [
+                refs['tabs'].set_value(refs['tab_today']),
+                update_nav_style('today')
+            ]
+        ).props('flat round').classes('text-2xl')
+
+        refs['nav_buttons']['input'] = ui.button('➕',
+            on_click=lambda: [
+                refs['tabs'].set_value(refs['tab_input']),
+                update_nav_style('input')
+            ]
+        ).props('flat round').classes('text-2xl')
+
+        refs['nav_buttons']['coach'] = ui.button('🧠',
+            on_click=lambda: [
+                refs['tabs'].set_value(refs['tab_coach']),
+                update_nav_style('coach')
+            ]
+        ).props('flat round').classes('text-2xl')
+
+        refs['nav_buttons']['settings'] = ui.button('👤',
+            on_click=lambda: [
+                refs['tabs'].set_value(refs['tab_settings']),
+                update_nav_style('settings')
+            ]
+        ).props('flat round').classes('text-2xl')
     # ------------------------------------------------------------
     # weight dialog
     # ------------------------------------------------------------
@@ -1949,12 +1923,20 @@ with ui.column().classes(
         ).props('outline')
 
 
-    ui.timer(0.1, refresh_ui, once=True)
+def safe_refresh():
+    try:
+        refresh_ui()
+    except:
+        pass
 
-    import os
-    port = int(os.environ.get("PORT", 8080))
+update_nav_style('today')
 
-    ui.run(
-        host="0.0.0.0",
-        port=port
-    )
+ui.timer(0.1, safe_refresh, once=True)
+
+import os
+port = int(os.environ.get("PORT", 8080))
+
+ui.run(
+    host="0.0.0.0",
+    port=port
+)
