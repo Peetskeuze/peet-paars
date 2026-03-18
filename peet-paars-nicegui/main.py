@@ -20,6 +20,9 @@ STATIC_DIR = ROOT / "static"
 
 app.add_static_files('/static', str(STATIC_DIR))
 
+# service worker op root (BELANGRIJK voor PWA)
+app.add_static_files('/', str(ROOT))
+
 
 from core.profile_store import init_db, save_profile, load_profile
 
@@ -57,7 +60,7 @@ ui.add_head_html("""
 ui.add_head_html("""
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/static/sw.js');
+  navigator.serviceWorker.register('/sw.js');
 }
 </script>
 """)
@@ -761,7 +764,14 @@ def save_profile_from_ui():
     safe_notify("Profiel opgeslagen", "positive")
 
     refresh_ui()
+# ------------------------------------------------------------
+# veilige ref setter (voorkomt KeyError)
+# ------------------------------------------------------------
 
+def set_ref_text(name: str, value: str):
+    el = refs.get(name)
+    if el:
+        el.set_text(value)
 
 def refresh_ui() -> None:
 
@@ -858,10 +868,10 @@ def refresh_ui() -> None:
             )
 
 
-    if 'coach_line' in refs:
-        refs['coach_line'].set_text(
-            coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal)
-        )
+if 'coach_line' in refs:
+    refs['coach_line'].set_text(
+        coach_line(eaten=eaten_kcal, burned=burned_kcal, net=netto_kcal, target=target_kcal)
+    )
 
     analysis = analyze_day(day_rec)
 
