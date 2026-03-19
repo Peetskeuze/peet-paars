@@ -56,7 +56,7 @@ ui.add_head_html("""
 <script>
 // SERVICE WORKER
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
+  navigator.serviceWorker.register('/static/sw.js');
 }
 
 // INSTALL PROMPT FORCE
