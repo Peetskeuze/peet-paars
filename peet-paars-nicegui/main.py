@@ -9,20 +9,23 @@ from datetime import datetime, date, timedelta
 
 from nicegui import ui, app
 from dotenv import load_dotenv
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 load_dotenv()
 
-# pad naar projectmap
-ROOT = Path(__file__).resolve().parent
+# ============================================================
+# PATHS
+# ============================================================
 
+ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
 
-from fastapi.responses import FileResponse
+# ============================================================
+# STATIC FILE ROUTES (MOET BOVENAAN STAAN)
+# ============================================================
 
-@app.get('/debug-files')
+@app.get('/debug-files', include_in_schema=False)
 def debug_files():
-    import os
     return {
         "root": str(ROOT),
         "static_dir": str(STATIC_DIR),
@@ -30,26 +33,29 @@ def debug_files():
         "files": os.listdir(STATIC_DIR) if STATIC_DIR.exists() else []
     }
 
-@app.get('/manifest.json')
+@app.get('/manifest.json', include_in_schema=False)
 def manifest():
     return FileResponse(STATIC_DIR / 'manifest.json')
 
-@app.get('/sw.js')
+@app.get('/sw.js', include_in_schema=False)
 def sw():
     return FileResponse(STATIC_DIR / 'sw.js')
 
-@app.get('/icon-192.png')
+@app.get('/icon-192.png', include_in_schema=False)
 def icon_192():
     return FileResponse(STATIC_DIR / 'icon-192.png')
 
-@app.get('/icon-512.png')
+@app.get('/icon-512.png', include_in_schema=False)
 def icon_512():
     return FileResponse(STATIC_DIR / 'icon-512.png')
+
+# ============================================================
+# APP INIT
+# ============================================================
 
 from core.profile_store import init_db, save_profile, load_profile
 
 init_db()
-
 # ============================================================
 # NICEGUI UI CONFIG
 # ============================================================
