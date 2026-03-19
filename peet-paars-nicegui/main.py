@@ -20,6 +20,15 @@ STATIC_DIR = ROOT / "static"
 
 from fastapi.responses import FileResponse
 
+@app.get('/debug-files')
+def debug_files():
+    import os
+    return {
+        "root": str(ROOT),
+        "static_dir": str(STATIC_DIR),
+        "exists": STATIC_DIR.exists(),
+        "files": os.listdir(STATIC_DIR) if STATIC_DIR.exists() else []
+    }
 
 @app.get('/manifest.json')
 def manifest():
