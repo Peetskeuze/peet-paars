@@ -9,22 +9,33 @@ from datetime import datetime, date, timedelta
 
 from nicegui import ui, app
 from dotenv import load_dotenv
-
+from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
 
 # pad naar projectmap
 ROOT = Path(__file__).resolve().parent
 
+STATIC_DIR = ROOT / "static"
+
 from fastapi.responses import FileResponse
 
-STATIC_DIR = ROOT / "static"
-app.add_static_files('/static', str(STATIC_DIR))
+
+@app.get('/manifest.json')
+def manifest():
+    return FileResponse(STATIC_DIR / 'manifest.json')
 
 @app.get('/sw.js')
-def service_worker():
+def sw():
     return FileResponse(STATIC_DIR / 'sw.js')
 
+@app.get('/icon-192.png')
+def icon_192():
+    return FileResponse(STATIC_DIR / 'icon-192.png')
+
+@app.get('/icon-512.png')
+def icon_512():
+    return FileResponse(STATIC_DIR / 'icon-512.png')
 
 from core.profile_store import init_db, save_profile, load_profile
 
@@ -38,7 +49,7 @@ ui.add_head_html("""
 
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-<link rel="manifest" href="/static/manifest.json">
+<link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#6E3BF7">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -56,7 +67,7 @@ ui.add_head_html("""
 <script>
 // SERVICE WORKER
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/static/sw.js');
+  navigator.serviceWorker.register('/sw.js');
 }
 
 // INSTALL PROMPT FORCE
