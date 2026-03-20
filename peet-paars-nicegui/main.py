@@ -72,17 +72,28 @@ ui.add_head_html("""
 <meta name="apple-mobile-web-app-title" content="Peet Coach">
 
 <style>
-body {
-  background-color: #6E3BF7;
+html, body {
+    height: 100%;
+    margin: 0;
 }
-</style>
 
-
-<style>
+/* Fullscreen container */
 .q-page-container {
+    height: 100vh !important;
     max-width: 100% !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
+    padding: 8px !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Page */
+.q-page {
+    min-height: 100vh !important;
+}
+
+/* App background (splash feel) */
+body {
+    background-color: #6E3BF7;
 }
 </style>
 
@@ -92,7 +103,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
 
-// INSTALL PROMPT FORCE
+// INSTALL PROMPT
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -124,9 +135,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
 </script>
 
 """)
-# ============================================================
-# PEET COACH — NICEGUI APP
-# ============================================================
 
 # ============================================================
 # USER PROFILE (persoonlijk dagdoel)
