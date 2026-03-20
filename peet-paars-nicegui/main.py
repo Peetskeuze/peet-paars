@@ -1586,374 +1586,374 @@ def show_weight_history() -> None:
 app_state['days'] = load_data()
 ensure_day(app_state['selected_date'])
 
-# ============================================================
-# UI
-# ============================================================
+    # ============================================================
+    # UI
+    # ============================================================
 
-ui.page_title('Peet Coach')
+    ui.page_title('Peet Coach')
 
-with ui.element('div').classes(
-    'w-full h-screen overflow-hidden'
-).style(
-    'display:flex; flex-direction:column;'
-):
-
-    # CONTENT WRAPPER (hier komt AL je bestaande UI in)
     with ui.element('div').classes(
-        'flex-1 overflow-hidden'
-    ).style('min-height:0;'):
+        'w-full h-screen overflow-hidden'
+    ).style(
+        'display:flex; flex-direction:column;'
+    ):
 
-        with ui.column().classes(
-            'w-full p-4 gap-4 h-full overflow-y-auto pb-24'
-        ):
+        # CONTENT WRAPPER (hier komt AL je bestaande UI in)
+        with ui.element('div').classes(
+            'flex-1 overflow-hidden'
+        ).style('min-height:0;'):
 
-    # ------------------------------------------------------------
-    # HEADER
-    # ------------------------------------------------------------
+            with ui.column().classes(
+                'w-full p-4 gap-4 h-full overflow-y-auto pb-24'
+            ):
 
-    with ui.row().classes('w-full items-center justify-between'):
+        # ------------------------------------------------------------
+        # HEADER
+        # ------------------------------------------------------------
 
-        ui.label('Peet Coach').classes('text-2xl font-bold')
+        with ui.row().classes('w-full items-center justify-between'):
 
-        ui.button(
-            '📅',
-            on_click=lambda: refs['date_dialog'].open()
-        ).props('flat round')
+            ui.label('Peet Coach').classes('text-2xl font-bold')
 
-
-    with ui.column():
-
-        refs['day_title'] = ui.label('').classes('text-lg font-semibold')
-        refs['day_sub'] = ui.label('').classes('text-xs text-gray-500')
+            ui.button(
+                '📅',
+                on_click=lambda: refs['date_dialog'].open()
+            ).props('flat round')
 
 
-    with ui.dialog() as refs['date_dialog'], ui.card():
+        with ui.column():
 
-        refs['date_picker'] = ui.date(
-            value=date.fromisoformat(app_state['selected_date']),
-            on_change=on_change_selected_date
-        ).props('mask="YYYY-MM-DD"')
+            refs['day_title'] = ui.label('').classes('text-lg font-semibold')
+            refs['day_sub'] = ui.label('').classes('text-xs text-gray-500')
 
-        ui.button(
-            'Sluiten',
-            on_click=refs['date_dialog'].close
+
+        with ui.dialog() as refs['date_dialog'], ui.card():
+
+            refs['date_picker'] = ui.date(
+                value=date.fromisoformat(app_state['selected_date']),
+                on_change=on_change_selected_date
+            ).props('mask="YYYY-MM-DD"')
+
+            ui.button(
+                'Sluiten',
+                on_click=refs['date_dialog'].close
+            )
+
+        # ------------------------------------------------------------
+        # TABS
+        # ------------------------------------------------------------
+
+        with ui.tabs().classes('w-full hidden') as refs['tabs']:
+
+            refs['tab_today'] = ui.tab('Vandaag')
+            refs['tab_input'] = ui.tab('Invoer')
+            refs['tab_coach'] = ui.tab('Coach')
+            refs['tab_settings'] = ui.tab('Instellingen')
+
+
+        refs['tabs'].on_value_change(
+            lambda e: app_state.update({
+                'active_tab':
+                    'input' if e.value == refs['tab_input']
+                    else 'coach' if e.value == refs['tab_coach']
+                    else 'settings' if e.value == refs['tab_settings']
+                    else 'today'
+            })
         )
 
-    # ------------------------------------------------------------
-    # TABS
-    # ------------------------------------------------------------
-
-    with ui.tabs().classes('w-full hidden') as refs['tabs']:
-
-        refs['tab_today'] = ui.tab('Vandaag')
-        refs['tab_input'] = ui.tab('Invoer')
-        refs['tab_coach'] = ui.tab('Coach')
-        refs['tab_settings'] = ui.tab('Instellingen')
-
-
-    refs['tabs'].on_value_change(
-        lambda e: app_state.update({
-            'active_tab':
-                'input' if e.value == refs['tab_input']
-                else 'coach' if e.value == refs['tab_coach']
-                else 'settings' if e.value == refs['tab_settings']
-                else 'today'
-        })
-    )
-
-
-    # =========================================================
-    # TAB PANELS
-    # =========================================================
-
-    with ui.tab_panels(refs['tabs'], value=refs['tab_today']).classes(
-        'w-full h-full overflow-hidden pb-24'
-    ):
 
         # =========================================================
-        # TAB 1 — VANDAAG
+        # TAB PANELS
         # =========================================================
-        with ui.tab_panel(refs['tab_today']).classes(
-            'w-full h-full overflow-y-auto'
+
+        with ui.tab_panels(refs['tabs'], value=refs['tab_today']).classes(
+            'w-full h-full overflow-hidden pb-24'
         ):
 
-            profile = load_profile() or {}
+            # =========================================================
+            # TAB 1 — VANDAAG
+            # =========================================================
+            with ui.tab_panel(refs['tab_today']).classes(
+                'w-full h-full overflow-y-auto'
+            ):
 
-            calculated_kcal = DEFAULT_DAILY_TARGET_KCAL
-            daily_goal = profile.get("kcal_target") or calculated_kcal
+                profile = load_profile() or {}
 
-            with ui.card().classes('w-full'):
-                ui.label('Vandaag').classes('text-lg font-semibold')
+                calculated_kcal = DEFAULT_DAILY_TARGET_KCAL
+                daily_goal = profile.get("kcal_target") or calculated_kcal
 
-                refs['today_food_col'] = ui.column().classes('w-full gap-2')
-                refs['today_activity_col'] = ui.column().classes('w-full gap-2')
+                with ui.card().classes('w-full'):
+                    ui.label('Vandaag').classes('text-lg font-semibold')
 
-                refs['today_totals'] = ui.label('').classes('text-sm font-semibold')
+                    refs['today_food_col'] = ui.column().classes('w-full gap-2')
+                    refs['today_activity_col'] = ui.column().classes('w-full gap-2')
 
-            with ui.card().classes('w-full gap-2'):
+                    refs['today_totals'] = ui.label('').classes('text-sm font-semibold')
 
-                ui.label('Dagprogress').classes('text-lg font-semibold')
+                with ui.card().classes('w-full gap-2'):
 
-                refs['remaining_big'] = ui.label('').classes(
-                    'text-2xl font-bold text-purple-900 text-center'
-                )
+                    ui.label('Dagprogress').classes('text-lg font-semibold')
 
-                refs['progress'] = ui.linear_progress(
-                    value=0,
-                    show_value=False,
-                    color='purple'
-                ).classes('w-full h-3 rounded')
+                    refs['remaining_big'] = ui.label('').classes(
+                        'text-2xl font-bold text-purple-900 text-center'
+                    )
 
-                refs['progress_label'] = ui.label('').classes(
-                    'text-sm text-gray-600 text-center'
-                )
+                    refs['progress'] = ui.linear_progress(
+                        value=0,
+                        show_value=False,
+                        color='purple'
+                    ).classes('w-full h-3 rounded')
 
-                with ui.grid(columns=2).classes(
-                    'w-full max-w-[420px] mx-auto gap-y-3 text-base mt-2'
-                ):
+                    refs['progress_label'] = ui.label('').classes(
+                        'text-sm text-gray-600 text-center'
+                    )
 
-                    ui.label('Gegeten')
-                    refs['eaten_val'] = ui.label('').classes('text-right')
+                    with ui.grid(columns=2).classes(
+                        'w-full max-w-[420px] mx-auto gap-y-3 text-base mt-2'
+                    ):
 
-                    ui.label('Bewogen')
-                    refs['burned_val'] = ui.label('').classes('text-right')
+                        ui.label('Gegeten')
+                        refs['eaten_val'] = ui.label('').classes('text-right')
 
-                    ui.label('Dagdoel')
-                    refs['target_val'] = ui.label('').classes('text-right')
+                        ui.label('Bewogen')
+                        refs['burned_val'] = ui.label('').classes('text-right')
 
-                    ui.label('Netto')
-                    refs['netto_val'] = ui.label('').classes('text-right')
+                        ui.label('Dagdoel')
+                        refs['target_val'] = ui.label('').classes('text-right')
 
-        # =========================================================
-        # TAB 2 — INVOER
-        # =========================================================
-        with ui.tab_panel(refs['tab_input']).classes(
-            'w-full h-full overflow-y-auto'
-        ):
+                        ui.label('Netto')
+                        refs['netto_val'] = ui.label('').classes('text-right')
 
-            # SNELLE INVOER
-            with ui.card().classes('w-full'):
+            # =========================================================
+            # TAB 2 — INVOER
+            # =========================================================
+            with ui.tab_panel(refs['tab_input']).classes(
+                'w-full h-full overflow-y-auto'
+            ):
 
-                ui.label('⚡ Snelle invoer').classes('text-lg font-semibold')
+                # SNELLE INVOER
+                with ui.card().classes('w-full'):
 
-                with ui.row().classes('w-full items-center gap-2'):
+                    ui.label('⚡ Snelle invoer').classes('text-lg font-semibold')
 
-                    refs['quick_input'] = ui.input(
-                        placeholder='bijv: 150 kip + 200 kwark'
-                    ).classes('grow')
+                    with ui.row().classes('w-full items-center gap-2'):
 
-                    refs['quick_add_btn'] = ui.button(
-                        '+',
-                        on_click=quick_add
-                    ).props('round color=primary')
+                        refs['quick_input'] = ui.input(
+                            placeholder='bijv: 150 kip + 200 kwark'
+                        ).classes('grow')
 
-                ui.label('Recent gegeten').classes(
-                    'text-sm font-semibold text-gray-700'
-                )
+                        refs['quick_add_btn'] = ui.button(
+                            '+',
+                            on_click=quick_add
+                        ).props('round color=primary')
 
-                refs['recent_row'] = ui.row().classes('w-full gap-2')
-                refs['pending_product_box'] = ui.column().classes('w-full gap-2')
+                    ui.label('Recent gegeten').classes(
+                        'text-sm font-semibold text-gray-700'
+                    )
 
-            # ETEN TOEVOEGEN
-            with ui.card().classes('w-full'):
+                    refs['recent_row'] = ui.row().classes('w-full gap-2')
+                    refs['pending_product_box'] = ui.column().classes('w-full gap-2')
 
-                ui.label('➕ Eten toevoegen').classes('text-lg font-semibold')
+                # ETEN TOEVOEGEN
+                with ui.card().classes('w-full'):
 
-                product_names = sorted([
-                    p.get('name') or p.get('label')
-                    for p in PRODUCTS
-                    if p.get('name') or p.get('label')
-                ])
+                    ui.label('➕ Eten toevoegen').classes('text-lg font-semibold')
 
-                refs['food_select'] = ui.select(
-                    options=product_names,
-                    with_input=True,
-                    label='Product'
-                ).classes('w-full')
+                    product_names = sorted([
+                        p.get('name') or p.get('label')
+                        for p in PRODUCTS
+                        if p.get('name') or p.get('label')
+                    ])
 
-                refs['food_amount'] = ui.number(
-                    label='Hoeveelheid',
-                    value=100.0,
-                    min=0.0,
-                    max=2000.0,
-                    step=5.0
-                ).classes('w-full')
+                    refs['food_select'] = ui.select(
+                        options=product_names,
+                        with_input=True,
+                        label='Product'
+                    ).classes('w-full')
 
-                refs['food_select_btn'] = ui.button(
-                    'Toevoegen',
-                    on_click=add_selected_food
-                ).props('color=primary')
+                    refs['food_amount'] = ui.number(
+                        label='Hoeveelheid',
+                        value=100.0,
+                        min=0.0,
+                        max=2000.0,
+                        step=5.0
+                    ).classes('w-full')
 
-            # RECEPT VOORSTEL
-            with ui.card().classes('w-full'):
-
-                ui.label('🍽 Recept voorstel').classes('text-lg font-semibold')
-
-                with ui.row().classes('gap-2'):
-
-                    refs['recipe_lunch_btn'] = ui.button(
-                        'Genereer lunch',
-                        on_click=lambda e: generate_recipe('Lunch')
+                    refs['food_select_btn'] = ui.button(
+                        'Toevoegen',
+                        on_click=add_selected_food
                     ).props('color=primary')
 
-                    refs['recipe_dinner_btn'] = ui.button(
-                        'Genereer diner',
-                        on_click=lambda e: generate_recipe('Diner')
-                    ).props('outline')
+                # RECEPT VOORSTEL
+                with ui.card().classes('w-full'):
 
-                refs['recipe_box'] = ui.column().classes('w-full gap-2')
+                    ui.label('🍽 Recept voorstel').classes('text-lg font-semibold')
 
-            # BEWEGING TOEVOEGEN
-            with ui.card().classes('w-full'):
+                    with ui.row().classes('gap-2'):
 
-                ui.label('➕ Beweging toevoegen').classes('text-lg font-semibold')
+                        refs['recipe_lunch_btn'] = ui.button(
+                            'Genereer lunch',
+                            on_click=lambda e: generate_recipe('Lunch')
+                        ).props('color=primary')
 
-                refs['activity_select'] = ui.select(
-                    options=list(ACTIVITY_MET.keys()),
-                    label='Activiteit'
-                ).classes('w-full')
+                        refs['recipe_dinner_btn'] = ui.button(
+                            'Genereer diner',
+                            on_click=lambda e: generate_recipe('Diner')
+                        ).props('outline')
 
-                refs['activity_duration'] = ui.number(
-                    label='Duur (minuten)',
-                    value=0,
-                    min=0,
-                    step=5
-                ).classes('w-full')
+                    refs['recipe_box'] = ui.column().classes('w-full gap-2')
 
-                refs['activity_garmin'] = ui.number(
-                    label='Of voer Garmin kcal direct in',
-                    value=0,
-                    min=0,
-                    step=10
-                ).classes('w-full')
+                # BEWEGING TOEVOEGEN
+                with ui.card().classes('w-full'):
 
-                refs['activity_add_btn'] = ui.button(
-                    'Toevoegen',
-                    on_click=add_activity
-                ).props('color=primary')
+                    ui.label('➕ Beweging toevoegen').classes('text-lg font-semibold')
+
+                    refs['activity_select'] = ui.select(
+                        options=list(ACTIVITY_MET.keys()),
+                        label='Activiteit'
+                    ).classes('w-full')
+
+                    refs['activity_duration'] = ui.number(
+                        label='Duur (minuten)',
+                        value=0,
+                        min=0,
+                        step=5
+                    ).classes('w-full')
+
+                    refs['activity_garmin'] = ui.number(
+                        label='Of voer Garmin kcal direct in',
+                        value=0,
+                        min=0,
+                        step=10
+                    ).classes('w-full')
+
+                    refs['activity_add_btn'] = ui.button(
+                        'Toevoegen',
+                        on_click=add_activity
+                    ).props('color=primary')
+
+            # =========================================================
+            # TAB 3 — COACH
+            # =========================================================
+            with ui.tab_panel(refs['tab_coach']).classes(
+                'w-full h-full overflow-y-auto'
+            ):
+
+                with ui.card().classes('w-full'):
+                    ui.label('Peet coach').classes('text-lg font-semibold')
+                    refs['peet_coach'] = ui.label('')
+                    refs['coach_target'] = ui.label('').classes('text-sm text-gray-500')
+
+                with ui.card().classes('w-full'):
+                    ui.label('Honger verwachting').classes('text-lg font-semibold')
+                    refs['hunger'] = ui.label('')
+                    refs['hours_since'] = ui.label('').classes('text-sm text-gray-500')
+
+                with ui.card().classes('w-full'):
+                    ui.label('Week koers').classes('text-lg font-semibold')
+                    refs['week_balance'] = ui.label('')
+                    refs['week_note'] = ui.label('').classes('text-sm text-gray-500')
+
+            # =========================================================
+            # TAB 4 — INSTELLINGEN
+            # =========================================================
+            with ui.tab_panel(refs['tab_settings']).classes(
+                'w-full h-full overflow-y-auto'
+            ):
+
+                profile = load_profile() or {}
+
+                with ui.card().classes('w-full'):
+
+                    ui.label('Persoonlijk profiel').classes('text-lg font-semibold')
+
+                    refs['profile_sex'] = ui.select(
+                        options=['male', 'female'],
+                        label='Geslacht',
+                        value=profile.get('sex', 'male')
+                    ).classes('w-full')
+
+                    refs['profile_age'] = ui.number(
+                        label='Leeftijd',
+                        value=profile.get('age', 63)
+                    ).classes('w-full')
+
+                    refs['profile_height'] = ui.number(
+                        label='Lengte (cm)',
+                        value=profile.get('height', 186)
+                    ).classes('w-full')
+
+                    refs['profile_weight'] = ui.number(
+                        label='Huidig gewicht (kg)',
+                        value=profile.get('current_weight', 110)
+                    ).classes('w-full')
+
+                    refs['profile_target'] = ui.number(
+                        label='Streefgewicht (kg)',
+                        value=profile.get('target_weight', 80)
+                    ).classes('w-full')
+
+                    refs['profile_weeks'] = ui.number(
+                        label='Aantal weken',
+                        value=profile.get('weeks_to_goal', 16)
+                    ).classes('w-full')
+
+                    refs['profile_kcal_target'] = ui.number(
+                        label='Dagelijkse calorie doel',
+                        value=profile.get('kcal_target', None)
+                    ).classes('w-full')
+
+                    ui.label('Leeg laten = advies van Peet Coach').classes(
+                        'text-xs text-gray-500'
+                    )
+
+                    ui.button(
+                        'Opslaan',
+                        on_click=save_profile_from_ui
+                    ).props('color=primary')
+
 
         # =========================================================
-        # TAB 3 — COACH
+        # BOTTOM NAVIGATION
         # =========================================================
-        with ui.tab_panel(refs['tab_coach']).classes(
-            'w-full h-full overflow-y-auto'
+
+        refs['nav_buttons'] = {}
+
+        with ui.row().classes(
+            'fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg justify-around items-center p-3'
         ):
 
-            with ui.card().classes('w-full'):
-                ui.label('Peet coach').classes('text-lg font-semibold')
-                refs['peet_coach'] = ui.label('')
-                refs['coach_target'] = ui.label('').classes('text-sm text-gray-500')
+            refs['nav_buttons']['today'] = ui.button(
+                '🍽️',
+                on_click=lambda: [
+                    refs['tabs'].set_value(refs['tab_today']),
+                    update_nav_style('today')
+                ]
+            ).props('flat round').classes('text-2xl')
 
-            with ui.card().classes('w-full'):
-                ui.label('Honger verwachting').classes('text-lg font-semibold')
-                refs['hunger'] = ui.label('')
-                refs['hours_since'] = ui.label('').classes('text-sm text-gray-500')
+            refs['nav_buttons']['input'] = ui.button(
+                '➕',
+                on_click=lambda: [
+                    refs['tabs'].set_value(refs['tab_input']),
+                    update_nav_style('input')
+                ]
+            ).props('flat round').classes('text-2xl')
 
-            with ui.card().classes('w-full'):
-                ui.label('Week koers').classes('text-lg font-semibold')
-                refs['week_balance'] = ui.label('')
-                refs['week_note'] = ui.label('').classes('text-sm text-gray-500')
+            refs['nav_buttons']['coach'] = ui.button(
+                '🧠',
+                on_click=lambda: [
+                    refs['tabs'].set_value(refs['tab_coach']),
+                    update_nav_style('coach')
+                ]
+            ).props('flat round').classes('text-2xl')
 
-        # =========================================================
-        # TAB 4 — INSTELLINGEN
-        # =========================================================
-        with ui.tab_panel(refs['tab_settings']).classes(
-            'w-full h-full overflow-y-auto'
-        ):
-
-            profile = load_profile() or {}
-
-            with ui.card().classes('w-full'):
-
-                ui.label('Persoonlijk profiel').classes('text-lg font-semibold')
-
-                refs['profile_sex'] = ui.select(
-                    options=['male', 'female'],
-                    label='Geslacht',
-                    value=profile.get('sex', 'male')
-                ).classes('w-full')
-
-                refs['profile_age'] = ui.number(
-                    label='Leeftijd',
-                    value=profile.get('age', 63)
-                ).classes('w-full')
-
-                refs['profile_height'] = ui.number(
-                    label='Lengte (cm)',
-                    value=profile.get('height', 186)
-                ).classes('w-full')
-
-                refs['profile_weight'] = ui.number(
-                    label='Huidig gewicht (kg)',
-                    value=profile.get('current_weight', 110)
-                ).classes('w-full')
-
-                refs['profile_target'] = ui.number(
-                    label='Streefgewicht (kg)',
-                    value=profile.get('target_weight', 80)
-                ).classes('w-full')
-
-                refs['profile_weeks'] = ui.number(
-                    label='Aantal weken',
-                    value=profile.get('weeks_to_goal', 16)
-                ).classes('w-full')
-
-                refs['profile_kcal_target'] = ui.number(
-                    label='Dagelijkse calorie doel',
-                    value=profile.get('kcal_target', None)
-                ).classes('w-full')
-
-                ui.label('Leeg laten = advies van Peet Coach').classes(
-                    'text-xs text-gray-500'
-                )
-
-                ui.button(
-                    'Opslaan',
-                    on_click=save_profile_from_ui
-                ).props('color=primary')
-
-
-    # =========================================================
-    # BOTTOM NAVIGATION
-    # =========================================================
-
-    refs['nav_buttons'] = {}
-
-    with ui.row().classes(
-        'fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg justify-around items-center p-3'
-    ):
-
-        refs['nav_buttons']['today'] = ui.button(
-            '🍽️',
-            on_click=lambda: [
-                refs['tabs'].set_value(refs['tab_today']),
-                update_nav_style('today')
-            ]
-        ).props('flat round').classes('text-2xl')
-
-        refs['nav_buttons']['input'] = ui.button(
-            '➕',
-            on_click=lambda: [
-                refs['tabs'].set_value(refs['tab_input']),
-                update_nav_style('input')
-            ]
-        ).props('flat round').classes('text-2xl')
-
-        refs['nav_buttons']['coach'] = ui.button(
-            '🧠',
-            on_click=lambda: [
-                refs['tabs'].set_value(refs['tab_coach']),
-                update_nav_style('coach')
-            ]
-        ).props('flat round').classes('text-2xl')
-
-        refs['nav_buttons']['settings'] = ui.button(
-            '👤',
-            on_click=lambda: [
-                refs['tabs'].set_value(refs['tab_settings']),
-                update_nav_style('settings')
-            ]
-        ).props('flat round').classes('text-2xl')
+            refs['nav_buttons']['settings'] = ui.button(
+                '👤',
+                on_click=lambda: [
+                    refs['tabs'].set_value(refs['tab_settings']),
+                    update_nav_style('settings')
+                ]
+            ).props('flat round').classes('text-2xl')
 
     # ------------------------------------------------------------
     # weight dialog
