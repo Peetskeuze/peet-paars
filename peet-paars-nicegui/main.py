@@ -72,6 +72,13 @@ ui.add_head_html("""
 <meta name="apple-mobile-web-app-title" content="Peet Coach">
 
 <style>
+body {
+  background-color: #6E3BF7;
+}
+</style>
+
+
+<style>
 .q-page-container {
     max-width: 100% !important;
     padding-left: 8px !important;
