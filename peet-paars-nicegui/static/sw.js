@@ -1,6 +1,18 @@
+const CACHE_NAME = 'peet-coach-v1';
+
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installed');
   self.skipWaiting();
+
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        '/',
+        '/manifest.json',
+        '/icon-192.png',
+        '/icon-512.png'
+      ]);
+    })
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -8,5 +20,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(fetch(event.request));
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
+  );
 });
