@@ -683,6 +683,30 @@ def add_food_item_to_day(day_rec: dict, product: dict, amount: float) -> None:
         'timestamp': datetime.now().isoformat(),
     })
 
+def set_macro(value: str):
+    app_state['macro_choice'] = value
+    update_macro_ui()
+
+
+def update_macro_ui():
+
+    current = app_state.get('macro_choice', 'Eiwit')
+
+    mapping = {
+        'Eiwit': refs.get('macro_eiwit'),
+        'Vet': refs.get('macro_vet'),
+        'Carbs': refs.get('macro_carbs'),
+    }
+
+    for name, btn in mapping.items():
+        if not btn:
+            continue
+
+        if name == current:
+            btn.classes(replace='flex-1 bg-purple-600 text-white')
+        else:
+            btn.classes(replace='flex-1 bg-gray-100 text-gray-700')
+
 def generate_recipe_item(
     meal_type: str,
     program: str,
@@ -827,6 +851,8 @@ Geef alleen JSON in dit formaat:
 }}
 """
 
+
+
     # ---------------------------------------------------------
     # fallback recept (zonder AI)
     # ---------------------------------------------------------
@@ -895,6 +921,7 @@ Geef alleen JSON in dit formaat:
                 "source": "peet_prompt",
                 "program": program,
                 "meal_type": meal_type,
+                "macro_focus": macro_focus,  # 🔥 DEZE TOEVOEGEN
                 "ingredients": model_out.get("ingredients", []),
                 "instructions": model_out.get("instructions", []),
                 "note": str(model_out.get("chef_tip", "")),
@@ -1151,11 +1178,13 @@ def refresh_ui() -> None:
         refs['date_picker'].value = selected_dt
 
     if 'day_title' in refs:
-        refs['day_title'].set_text(format_day_title_nl(selected_dt, today_dt))
+        if app_state.get('active_tab') == 'today':
+            refs['day_title'].set_text('Vandaag')
+        else:
+            refs['day_title'].set_text(app_state.get('active_tab', '').capitalize())
 
-    if 'day_sub' in refs:
         refs['day_sub'].set_text(
-            f"{NL_DAY_FULL[selected_dt.weekday()]} {selected_dt.day} {NL_MONTH_FULL[selected_dt.month - 1]}"
+            f"{selected_dt.day} {NL_MONTH_FULL[selected_dt.month - 1]}"
         )
 
     if 'quick_input' in refs:
@@ -1843,7 +1872,21 @@ def render_today_tab() -> None:
 
     if day_rec.get('food_items'):
         with ui.card().classes('w-full gap-2'):
+
             ui.label('Eten').classes('font-semibold')
+
+            with ui.column().classes('max-h-52 overflow-y-auto w-full'):
+
+                for item in day_rec.get('food_items', []):
+                    with ui.row().classes('w-full items-center justify-between'):
+                        ui.label(
+                            f"{item.get('product')} | {item.get('amount')} {item.get('unit')} | {item.get('kcal')} kcal"
+                        ).classes('text-sm')
+
+                        ui.button(
+                            '❌',
+                            on_click=lambda item_id=item.get('id'): delete_food(item_id)
+                        ).props('flat dense')
 
             for item in day_rec.get('food_items', []):
                 with ui.row().classes('w-full items-center justify-between'):
@@ -1858,7 +1901,21 @@ def render_today_tab() -> None:
 
     if day_rec.get('activity_items'):
         with ui.card().classes('w-full gap-2'):
+
             ui.label('Beweging').classes('font-semibold')
+
+            with ui.column().classes('max-h-52 overflow-y-auto w-full'):
+
+                for item in day_rec.get('activity_items', []):
+                    with ui.row().classes('w-full items-center justify-between'):
+                        ui.label(
+                            f"{item.get('activity')} | {item.get('duration_min')} min | {item.get('kcal')} kcal"
+                        ).classes('text-sm')
+
+                        ui.button(
+                            '❌',
+                            on_click=lambda item_id=item.get('id'): delete_activity(item_id)
+                        ).props('flat dense')
 
             for item in day_rec.get('activity_items', []):
                 with ui.row().classes('w-full items-center justify-between'):
@@ -1876,15 +1933,22 @@ def render_today_tab() -> None:
 
     if remaining_kcal > 0:
 
-        with ui.card().classes('w-full gap-3'):
+        with ui.row().classes('w-full gap-2 items-stretch'):
 
-            ui.label('Wat wil je nog eten?').classes('font-semibold')
+            refs['macro_eiwit'] = ui.button(
+                'Eiwit',
+                on_click=lambda: set_macro('Eiwit')
+            ).classes('flex-1 h-10 text-sm')
 
-            # 🔥 NIEUW: macro keuze
-            refs['macro_choice'] = ui.radio(
-                ['Eiwit', 'Vet', 'Carbs'],
-                value='Eiwit'
-            ).props('inline')
+            refs['macro_vet'] = ui.button(
+                'Vet',
+                on_click=lambda: set_macro('Vet')
+            ).classes('flex-1 h-10 text-sm')
+
+            refs['macro_carbs'] = ui.button(
+                'Carbs',
+                on_click=lambda: set_macro('Carbs')
+            ).classes('flex-1 h-10 text-sm')
 
             with ui.row().classes('w-full gap-2'):
 
@@ -1892,7 +1956,7 @@ def render_today_tab() -> None:
                     f'Diner (~{int(remaining_kcal * 0.7)} kcal)',
                     on_click=lambda: generate_smart_meal(
                         'diner',
-                        refs['macro_choice'].value
+                        app_state.get('macro_choice', 'Eiwit')
                     )
                 ).props('outline').classes('w-full')
 
@@ -1900,7 +1964,7 @@ def render_today_tab() -> None:
                     f'Snack (~{int(remaining_kcal * 0.3)} kcal)',
                     on_click=lambda: generate_smart_meal(
                         'snack',
-                        refs['macro_choice'].value
+                        app_state.get('macro_choice', 'Eiwit')
                     )
                 ).props('outline').classes('w-full')
 
@@ -1908,11 +1972,15 @@ def render_today_tab() -> None:
                 'Verdelen (diner + snack)',
                 on_click=lambda: generate_smart_combo()
             ).props('color=primary').classes('w-full')
+
+            # 🔥 active state zetten
+            update_macro_ui()
+
 # ============================================================
 # UI
 # ============================================================
 
-ui.page_title('Peet Coach')
+ui.page_title('Coach')
 
 with ui.element('div').classes('w-full h-screen flex flex-col'):
 
@@ -1920,8 +1988,6 @@ with ui.element('div').classes('w-full h-screen flex flex-col'):
     # HEADER
     # ============================================================
     with ui.row().classes('w-full items-center justify-between p-4'):
-
-        ui.label('Peet Coach').classes('text-2xl font-bold')
 
         ui.button(
             '📅',
@@ -1987,24 +2053,48 @@ with ui.element('div').classes('w-full h-screen flex flex-col'):
             # =========================
             with ui.tab_panel(refs['tab_settings']).classes('h-full overflow-y-auto p-4 pb-24'):
 
+                profile = load_profile() or {}
+
                 with ui.card().classes('w-full gap-3'):
 
                     ui.label('Instellingen').classes('text-lg font-semibold')
 
-                    refs['target_input'] = ui.number(
+                    refs['profile_kcal_target'] = ui.number(
                         label='Dagdoel (kcal)',
-                        value=app_state.get('ui_data', {}).get('target_kcal', 1800)
+                        value=profile.get('kcal_target', 1800)
+                    ).classes('w-full')
+
+                    ui.label('Persoonlijk').classes('text-sm text-gray-500')
+
+                    refs['profile_weight'] = ui.number(
+                        label='Huidig gewicht (kg)',
+                        value=profile.get('current_weight', 110)
+                    ).classes('w-full')
+
+                    refs['profile_target'] = ui.number(
+                        label='Streefgewicht (kg)',
+                        value=profile.get('target_weight', 100)
+                    ).classes('w-full')
+
+                    refs['profile_weeks'] = ui.number(
+                        label='Aantal weken',
+                        value=profile.get('weeks_to_goal', 12)
                     ).classes('w-full')
 
                     def save_settings():
                         profile = load_profile() or {}
-                        profile['kcal_target'] = int(refs['target_input'].value or 1800)
+
+                        profile['kcal_target'] = int(refs['profile_kcal_target'].value or 1800)
+                        profile['current_weight'] = float(refs['profile_weight'].value or 0)
+                        profile['target_weight'] = float(refs['profile_target'].value or 0)
+                        profile['weeks_to_goal'] = int(refs['profile_weeks'].value or 12)
+
                         save_profile(profile)
 
                         app_state['ui_data'] = build_ui_data()
                         refresh_ui()
 
-                        ui.notify('Opgeslagen')
+                        ui.notify('Instellingen opgeslagen')
 
                     ui.button(
                         'Opslaan',
