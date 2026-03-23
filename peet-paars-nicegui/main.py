@@ -1018,6 +1018,46 @@ def save_profile_from_ui():
 # ------------------------------------------------------------
 # veilige ref setter (voorkomt KeyError)
 # ------------------------------------------------------------
+def switch_tab(tab_name: str):
+
+    app_state['active_tab'] = tab_name
+
+    if tab_name == 'today':
+        refs['tabs'].set_value(refs['tab_today'])
+        refs['day_title'].set_text('Vandaag')
+
+    elif tab_name == 'input':
+        refs['tabs'].set_value(refs['tab_input'])
+        refs['day_title'].set_text('Invoer')
+
+    elif tab_name == 'coach':
+        refs['tabs'].set_value(refs['tab_coach'])
+        refs['day_title'].set_text('Coach')
+
+    elif tab_name == 'settings':
+        refs['tabs'].set_value(refs['tab_settings'])
+        refs['day_title'].set_text('Instellingen')
+
+    update_nav_active(tab_name)
+
+
+def update_nav_active(active: str):
+
+    mapping = {
+        'today': refs['btn_today'],
+        'input': refs['btn_input'],
+        'coach': refs['btn_coach'],
+        'settings': refs['btn_settings'],
+    }
+
+    for name, btn in mapping.items():
+        if name == active:
+            btn.classes(replace='text-2xl text-purple-600' if name != 'input'
+                        else 'text-3xl text-purple-600')
+        else:
+            btn.classes(replace='text-2xl text-gray-400' if name != 'input'
+                        else 'text-3xl text-gray-400')
+
 
 def set_ref_text(name: str, value: str):
     el = refs.get(name)
@@ -1793,21 +1833,21 @@ with ui.element('div').classes('w-full h-screen flex flex-col'):
         'fixed bottom-0 left-0 right-0 bg-white border-t justify-around items-center py-3 z-10'
     ):
 
-        ui.button(icon='calendar_today',
-            on_click=lambda: refs['tabs'].set_value(refs['tab_today'])
-        ).props('flat round').classes('text-2xl')
+        refs['btn_today'] = ui.button(icon='calendar_today',
+            on_click=lambda: switch_tab('today')
+        ).props('flat round').classes('text-2xl text-gray-400')
 
-        ui.button(icon='add_circle',
-            on_click=lambda: refs['tabs'].set_value(refs['tab_input'])
-        ).props('flat round').classes('text-3xl text-purple-600')
+        refs['btn_input'] = ui.button(icon='add_circle',
+            on_click=lambda: switch_tab('input')
+        ).props('flat round').classes('text-3xl text-gray-400')
 
-        ui.button(icon='insights',
-            on_click=lambda: refs['tabs'].set_value(refs['tab_coach'])
-        ).props('flat round').classes('text-2xl')
+        refs['btn_coach'] = ui.button(icon='insights',
+            on_click=lambda: switch_tab('coach')
+        ).props('flat round').classes('text-2xl text-gray-400')
 
-        ui.button(icon='settings',
-            on_click=lambda: refs['tabs'].set_value(refs['tab_settings'])
-        ).props('flat round').classes('text-2xl')
+        refs['btn_settings'] = ui.button(icon='settings',
+            on_click=lambda: switch_tab('settings')
+        ).props('flat round').classes('text-2xl text-gray-400')
 
 def safe_refresh():
     try:
@@ -1820,7 +1860,11 @@ ui.timer(0.1, safe_refresh, once=True)
 import os
 port = int(os.environ.get("PORT", 8080))
 
+switch_tab('today')
+
 ui.run(
     host="0.0.0.0",
     port=port
 )
+
+update_nav_active('today')
