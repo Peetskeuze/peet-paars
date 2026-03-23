@@ -5182,5 +5182,35 @@
     "alias": [
       "krackers"
     ]
+  },
+  {
+    "id": "boterhammen",
+    "name": "boterhammen",
+    "label": "boterhammen",
+    "unit": "stuk",
+    "kcal": 80.0,
+    "protein": 3.0,
+    "fat": 1.0,
+    "carbs": 15.0,
+    "fiber": 2.0,
+    "std_portion": 1,
+    "alias": [
+      "boterhammen"
+    ]
+  },
+  {
+    "id": "boterhammen_ei",
+    "name": "boterhammen ei",
+    "label": "boterhammen ei",
+    "unit": "stuk",
+    "kcal": 180.0,
+    "protein": 9.0,
+    "fat": 7.0,
+    "carbs": 22.0,
+    "fiber": 2.0,
+    "std_portion": 1,
+    "alias": [
+      "boterhammen ei"
+    ]
   }
 ]
