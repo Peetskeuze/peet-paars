@@ -1790,13 +1790,24 @@ with ui.element('div').classes('w-full h-screen flex flex-col'):
     # BOTTOM NAV (ALTijd buiten content)
     # ============================================================
     with ui.row().classes(
-        'fixed bottom-0 left-0 right-0 bg-white border-t justify-around p-3 z-10'
+        'fixed bottom-0 left-0 right-0 bg-white border-t justify-around items-center py-3 z-10'
     ):
-        ui.button('🍽️', on_click=lambda: refs['tabs'].set_value(refs['tab_today'])).props('flat')
-        ui.button('➕', on_click=lambda: refs['tabs'].set_value(refs['tab_input'])).props('flat')
-        ui.button('🧠', on_click=lambda: refs['tabs'].set_value(refs['tab_coach'])).props('flat')
-        ui.button('👤', on_click=lambda: refs['tabs'].set_value(refs['tab_settings'])).props('flat')
 
+        ui.button(icon='calendar_today',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_today'])
+        ).props('flat round').classes('text-2xl')
+
+        ui.button(icon='add_circle',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_input'])
+        ).props('flat round').classes('text-3xl text-purple-600')
+
+        ui.button(icon='insights',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_coach'])
+        ).props('flat round').classes('text-2xl')
+
+        ui.button(icon='settings',
+            on_click=lambda: refs['tabs'].set_value(refs['tab_settings'])
+        ).props('flat round').classes('text-2xl')
 
 def safe_refresh():
     try:
