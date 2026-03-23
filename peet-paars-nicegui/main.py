@@ -333,9 +333,7 @@ def render_input_tab():
         with ui.card().classes('w-full items-center p-6 gap-2'):
 
             ui.spinner(size='lg')
-            ui.label('Peet is een recept voor je aan het maken...').classes(
-                'text-sm text-gray-500 text-center'
-            )
+            ui.label('De appt denkt even na...').classes('text-sm text-gray-500 text-center')
 
         return
 
@@ -692,6 +690,7 @@ def generate_recipe_item(
     target_kcal: int,
     eaten_kcal: int,
     burned_kcal: int,
+    macro_focus=None
 ) -> dict:
 
     # ---------------------------------------------------------
@@ -757,6 +756,25 @@ Bewogen kcal: {burned_kcal}
 Resterend kcal budget: {remaining_kcal}
 
 STRATEGIE VAN PEET
+
+MACRO FOCUS
+
+Focus op: {macro_focus}
+
+Als focus "Eiwit":
+- kies eiwitrijke producten
+- kip, vis, eieren, kwark, zuivel
+- houd vet en carbs lager
+
+Als focus "Vet":
+- gebruik gezonde vetten
+- avocado, noten, olijfolie
+- carbs lager houden
+
+Als focus "Carbs":
+- focus op koolhydraten
+- rijst, pasta, aardappel, brood
+- combineer met lichte eiwitbron
 
 - eiwit staat centraal
 - groente zorgt voor volume
@@ -1018,6 +1036,9 @@ def save_profile_from_ui():
 # ------------------------------------------------------------
 # veilige ref setter (voorkomt KeyError)
 # ------------------------------------------------------------
+
+
+
 def switch_tab(tab_name: str):
 
     app_state['active_tab'] = tab_name
@@ -1207,6 +1228,47 @@ def refresh_ui() -> None:
 
     if 'weight_box' in refs:
         refresh_weight_chart()
+
+def generate_smart_meal(meal_type: str, macro_focus: str):
+
+    ui_data = build_ui_data()
+    remaining = ui_data.get('remaining_kcal', 0)
+
+    if meal_type == 'diner':
+        kcal_target = int(remaining * 0.7)
+    else:
+        kcal_target = int(remaining * 0.3)
+
+    switch_tab('input')
+
+    app_state['loading_recipe'] = True
+    render_input_tab.refresh()
+
+    asyncio.create_task(
+        generate_recipe_custom(
+            meal_type.capitalize(),
+            kcal_target,
+            macro_focus
+        )
+    )
+
+def generate_smart_combo():
+
+    ui_data = build_ui_data()
+    remaining = ui_data.get('remaining_kcal', 0)
+
+    diner_kcal = int(remaining * 0.7)
+    snack_kcal = int(remaining * 0.3)
+
+    # naar input + spinner
+    switch_tab('input')
+    app_state['loading_recipe'] = True
+    render_input_tab.refresh()
+
+    asyncio.create_task(
+        generate_combo_recipes(diner_kcal, snack_kcal)
+    )
+
 # ============================================================
 # ACTIONS
 # ============================================================
@@ -1384,6 +1446,91 @@ def reject_recipe() -> None:
     app_state['active_tab'] = 'input'
 
     refresh_ui()
+
+
+
+async def generate_recipe_custom(meal_type: str, kcal_target: int, macro_focus: str):
+
+    app_state['loading_recipe'] = True
+    render_input_tab.refresh()
+
+    day_rec = ensure_day(app_state['selected_date'])
+
+    target_kcal = int(day_rec.get('target_kcal', DEFAULT_DAILY_TARGET_KCAL))
+    eaten_kcal = sum_food_kcal(day_rec)
+    burned_kcal = sum_activity_kcal(day_rec)
+
+    recipe = await asyncio.to_thread(
+        generate_recipe_item,
+        meal_type,
+        day_rec.get('program', 'Paars'),
+        kcal_target,
+        target_kcal,
+        eaten_kcal,
+        burned_kcal,
+        macro_focus
+    )
+
+    app_state['pending_recipe'] = recipe
+    app_state['loading_recipe'] = False
+
+    refs['tabs'].set_value(refs['tab_input'])
+    render_input_tab.refresh()
+
+async def generate_combo_recipes(diner_kcal: int, snack_kcal: int):
+
+    day_rec = ensure_day(app_state['selected_date'])
+
+    target_kcal = int(day_rec.get('target_kcal', DEFAULT_DAILY_TARGET_KCAL))
+    eaten_kcal = sum_food_kcal(day_rec)
+    burned_kcal = sum_activity_kcal(day_rec)
+
+    # 🔥 diner
+    diner = await asyncio.to_thread(
+        generate_recipe_item,
+        'Diner',
+        day_rec.get('program', 'Paars'),
+        diner_kcal,
+        target_kcal,
+        eaten_kcal,
+        burned_kcal
+    )
+
+    # 🔥 snack (op basis van zelfde dag)
+    snack = await asyncio.to_thread(
+        generate_recipe_item,
+        'Snack',
+        day_rec.get('program', 'Paars'),
+        snack_kcal,
+        target_kcal,
+        eaten_kcal,
+        burned_kcal
+    )
+
+    # 🔥 combineer netjes
+    app_state['pending_recipe'] = {
+        'product': 'Diner + Snack voorstel',
+        'kcal': diner.get('kcal', 0) + snack.get('kcal', 0),
+        'meta': {
+            'ingredients': (
+                ['--- DINER ---'] +
+                diner.get('meta', {}).get('ingredients', []) +
+                [''] +
+                ['--- SNACK ---'] +
+                snack.get('meta', {}).get('ingredients', [])
+            ),
+            'instructions': (
+                ['--- DINER ---'] +
+                diner.get('meta', {}).get('instructions', []) +
+                [''] +
+                ['--- SNACK ---'] +
+                snack.get('meta', {}).get('instructions', [])
+            )
+        }
+    }
+
+    app_state['loading_recipe'] = False
+    render_input_tab.refresh()
 
 def quick_add() -> None:
     text = refs['quick_input'].value or ''
@@ -1723,6 +1870,44 @@ def render_today_tab() -> None:
                         '❌',
                         on_click=lambda item_id=item.get('id'): delete_activity(item_id)
                     ).props('flat dense')
+    # ============================================================
+    # SLIMME KEUZE (PEET)
+    # ============================================================
+
+    if remaining_kcal > 0:
+
+        with ui.card().classes('w-full gap-3'):
+
+            ui.label('Wat wil je nog eten?').classes('font-semibold')
+
+            # 🔥 NIEUW: macro keuze
+            refs['macro_choice'] = ui.radio(
+                ['Eiwit', 'Vet', 'Carbs'],
+                value='Eiwit'
+            ).props('inline')
+
+            with ui.row().classes('w-full gap-2'):
+
+                ui.button(
+                    f'Diner (~{int(remaining_kcal * 0.7)} kcal)',
+                    on_click=lambda: generate_smart_meal(
+                        'diner',
+                        refs['macro_choice'].value
+                    )
+                ).props('outline').classes('w-full')
+
+                ui.button(
+                    f'Snack (~{int(remaining_kcal * 0.3)} kcal)',
+                    on_click=lambda: generate_smart_meal(
+                        'snack',
+                        refs['macro_choice'].value
+                    )
+                ).props('outline').classes('w-full')
+
+            ui.button(
+                'Verdelen (diner + snack)',
+                on_click=lambda: generate_smart_combo()
+            ).props('color=primary').classes('w-full')
 # ============================================================
 # UI
 # ============================================================
