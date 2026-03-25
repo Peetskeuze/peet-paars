@@ -5287,5 +5287,80 @@
     "alias": [
       "gebakken ei"
     ]
+  },
+  {
+    "id": "200kip",
+    "name": "200kip",
+    "label": "200kip",
+    "unit": "gram",
+    "kcal": 200.0,
+    "protein": 46.0,
+    "fat": 4.0,
+    "carbs": 0.0,
+    "fiber": 0.0,
+    "std_portion": 100,
+    "alias": [
+      "200kip"
+    ]
+  },
+  {
+    "id": "chocoladevla",
+    "name": "chocoladevla",
+    "label": "chocoladevla",
+    "unit": "gram",
+    "kcal": 130.0,
+    "protein": 3.0,
+    "fat": 5.0,
+    "carbs": 20.0,
+    "fiber": 0.0,
+    "std_portion": 100,
+    "alias": [
+      "chocoladevla"
+    ]
+  },
+  {
+    "id": "yoghurt_aardbeien",
+    "name": "yoghurt aardbeien",
+    "label": "yoghurt aardbeien",
+    "unit": "gram",
+    "kcal": 65.0,
+    "protein": 3.5,
+    "fat": 3.0,
+    "carbs": 6.0,
+    "fiber": 0.5,
+    "std_portion": 100,
+    "alias": [
+      "yoghurt aardbeien"
+    ]
+  },
+  {
+    "id": "nasi",
+    "name": "nasi",
+    "label": "nasi",
+    "unit": "gram",
+    "kcal": 130.0,
+    "protein": 3.0,
+    "fat": 1.5,
+    "carbs": 28.0,
+    "fiber": 1.0,
+    "std_portion": 100,
+    "alias": [
+      "nasi"
+    ]
+  },
+  {
+    "id": "macaroni",
+    "name": "macaroni",
+    "label": "macaroni",
+    "unit": "gram",
+    "kcal": 150.0,
+    "protein": 5.0,
+    "fat": 1.5,
+    "carbs": 30.0,
+    "fiber": 1.5,
+    "std_portion": 100,
+    "alias": [
+      "macaroni"
+    ]
   }
 ]

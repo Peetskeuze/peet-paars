@@ -375,6 +375,41 @@ def render_input_tab():
         return
 
     # ============================================================
+    # RECEPT TONEN
+    # ============================================================
+
+    pending_recipe = app_state.get('pending_recipe')
+
+    if pending_recipe:
+        with ui.card().classes('w-full gap-2'):
+            ui.label('Voorstel van Peet').classes('text-lg font-semibold')
+            ui.label(pending_recipe.get('product', 'Recept')).classes('font-semibold')
+            ui.label(f"{pending_recipe.get('kcal', 0)} kcal").classes('text-sm text-gray-500')
+
+            ingredients = pending_recipe.get('meta', {}).get('ingredients', [])
+            if ingredients:
+                ui.label('Ingrediënten').classes('text-sm font-semibold')
+                for i in ingredients:
+                    ui.label(f'• {i}').classes('text-sm')
+
+            instructions = pending_recipe.get('meta', {}).get('instructions', [])
+            if instructions:
+                ui.label('Bereiding').classes('text-sm font-semibold')
+                for step in instructions:
+                    ui.label(f'• {step}').classes('text-sm')
+
+            with ui.row().classes('gap-2'):
+                ui.button(
+                    'Toevoegen aan dag',
+                    on_click=accept_recipe
+                ).props('color=primary')
+
+                ui.button(
+                    'Andere proberen',
+                    on_click=reject_recipe
+                ).props('outline')
+
+    # ============================================================
     # LOADING SPINNER
     # ============================================================
 
@@ -509,40 +544,7 @@ def render_input_tab():
                 on_click=add_activity
             ).props('color=primary').classes('w-full')
 
-    # ============================================================
-    # RECEPT TONEN
-    # ============================================================
 
-    pending_recipe = app_state.get('pending_recipe')
-
-    if pending_recipe:
-        with ui.card().classes('w-full gap-2'):
-            ui.label('Voorstel van Peet').classes('text-lg font-semibold')
-            ui.label(pending_recipe.get('product', 'Recept')).classes('font-semibold')
-            ui.label(f"{pending_recipe.get('kcal', 0)} kcal").classes('text-sm text-gray-500')
-
-            ingredients = pending_recipe.get('meta', {}).get('ingredients', [])
-            if ingredients:
-                ui.label('Ingrediënten').classes('text-sm font-semibold')
-                for i in ingredients:
-                    ui.label(f'• {i}').classes('text-sm')
-
-            instructions = pending_recipe.get('meta', {}).get('instructions', [])
-            if instructions:
-                ui.label('Bereiding').classes('text-sm font-semibold')
-                for step in instructions:
-                    ui.label(f'• {step}').classes('text-sm')
-
-            with ui.row().classes('gap-2'):
-                ui.button(
-                    'Toevoegen aan dag',
-                    on_click=accept_recipe
-                ).props('color=primary')
-
-                ui.button(
-                    'Andere proberen',
-                    on_click=reject_recipe
-                ).props('outline')
 
 def set_input_mode(mode: str) -> None:
     app_state['input_mode'] = mode
@@ -1359,13 +1361,19 @@ def process_quick_food_input(text: str) -> None:
         # Stap 1 — invoer normaliseren
         # ------------------------------------------------------------
 
-        text = text.lower()
-        text = re.sub(r'\+(\d)', r'+ \1', text)
-        text = text.replace(",", "+")
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = text.lower().strip()
 
-        raw_entries = re.split(r'\s*\+\s*|\s+(?=\d)', text)
-        entries = [e.strip() for e in raw_entries if e.strip()]
+        # 🔥 altijd spaties rond +
+        text = re.sub(r'\s*\+\s*', ' + ', text)
+
+        # 🔥 komma = +
+        text = text.replace(',', ' + ')
+
+        # 🔥 dubbele spaties weg
+        text = re.sub(r'\s+', ' ', text)
+
+        
+        entries = [e.strip() for e in text.split('+') if e.strip()]
 
         for entry in entries:
 
@@ -1612,10 +1620,10 @@ async def generate_recipe_custom(meal_type: str, kcal_target: int, macro_focus: 
         macro_focus
     )
 
-    app_state['pending_recipe'] = recipe
     app_state['loading_recipe'] = False
+    app_state['pending_recipe'] = recipe
 
-    refs['tabs'].set_value(refs['tab_input'])
+    switch_tab('input')
     render_input_tab.refresh()
 
 async def generate_combo_recipes(diner_kcal: int, snack_kcal: int):
@@ -1649,6 +1657,8 @@ async def generate_combo_recipes(diner_kcal: int, snack_kcal: int):
     )
 
     # 🔥 combineer netjes
+    app_state['loading_recipe'] = False
+
     app_state['pending_recipe'] = {
         'product': 'Diner + Snack voorstel',
         'kcal': diner.get('kcal', 0) + snack.get('kcal', 0),
@@ -1670,7 +1680,7 @@ async def generate_combo_recipes(diner_kcal: int, snack_kcal: int):
         }
     }
 
-    app_state['loading_recipe'] = False
+    switch_tab('input')
     render_input_tab.refresh()
 
 def quick_add() -> None:
@@ -1889,12 +1899,10 @@ async def generate_recipe(meal_type: str) -> None:
 
     print("RECIPE GENERATED:", recipe)
 
+    app_state['loading_recipe'] = False
     app_state['pending_recipe'] = recipe
 
-    # 🔥 loading uit
-    app_state['loading_recipe'] = False
-
-    refs['tabs'].set_value(refs['tab_input'])
+    switch_tab('input')
     render_input_tab.refresh()
 
 
@@ -2039,49 +2047,46 @@ def render_today_tab() -> None:
 
     if remaining_kcal > 0:
 
-        with ui.row().classes('w-full gap-2 items-stretch'):
-
-            refs['macro_eiwit'] = ui.button(
-                'Eiwit',
-                on_click=lambda: set_macro('Eiwit')
-            ).classes('flex-1 h-10 text-sm')
-
-            refs['macro_vet'] = ui.button(
-                'Vet',
-                on_click=lambda: set_macro('Vet')
-            ).classes('flex-1 h-10 text-sm')
-
-            refs['macro_carbs'] = ui.button(
-                'Carbs',
-                on_click=lambda: set_macro('Carbs')
-            ).classes('flex-1 h-10 text-sm')
+        with ui.column().classes('w-full gap-2'):
 
             with ui.row().classes('w-full gap-2'):
+                refs['macro_eiwit'] = ui.button(
+                    'Eiwit',
+                    on_click=lambda: set_macro('Eiwit')
+                ).classes('flex-1 h-10 text-sm')
 
-                ui.button(
-                    f'Diner (~{int(remaining_kcal * 0.7)} kcal)',
-                    on_click=lambda: generate_smart_meal(
-                        'diner',
-                        app_state.get('macro_choice', 'Eiwit')
-                    )
-                ).props('outline').classes('w-full')
+                refs['macro_vet'] = ui.button(
+                    'Vet',
+                    on_click=lambda: set_macro('Vet')
+                ).classes('flex-1 h-10 text-sm')
 
-                ui.button(
-                    f'Snack (~{int(remaining_kcal * 0.3)} kcal)',
-                    on_click=lambda: generate_smart_meal(
-                        'snack',
-                        app_state.get('macro_choice', 'Eiwit')
-                    )
-                ).props('outline').classes('w-full')
+                refs['macro_carbs'] = ui.button(
+                    'Carbs',
+                    on_click=lambda: set_macro('Carbs')
+                ).classes('flex-1 h-10 text-sm')
+
+            ui.button(
+                f'Diner (~{int(remaining_kcal * 0.7)} kcal)',
+                on_click=lambda: generate_smart_meal(
+                    'diner',
+                    app_state.get('macro_choice', 'Eiwit')
+                )
+            ).props('outline').classes('w-full')
+
+            ui.button(
+                f'Snack (~{int(remaining_kcal * 0.3)} kcal)',
+                on_click=lambda: generate_smart_meal(
+                    'snack',
+                    app_state.get('macro_choice', 'Eiwit')
+                )
+            ).props('outline').classes('w-full')
 
             ui.button(
                 'Verdelen (diner + snack)',
                 on_click=lambda: generate_smart_combo()
             ).props('color=primary').classes('w-full')
 
-            # 🔥 active state zetten
             update_macro_ui()
-
 # ============================================================
 # UI
 # ============================================================
@@ -2093,12 +2098,6 @@ with ui.element('div').classes('w-full h-screen flex flex-col'):
     # ============================================================
     # HEADER
     # ============================================================
-    with ui.row().classes('w-full items-center justify-between p-4'):
-
-        ui.button(
-            '📅',
-            on_click=lambda: refs['date_dialog'].open()
-        ).props('flat round')
 
     with ui.column().classes('px-4 pb-2'):
         refs['day_title'] = ui.label('').classes('text-lg font-semibold')
@@ -2214,7 +2213,7 @@ with ui.element('div').classes('w-full h-screen flex flex-col'):
         'fixed bottom-0 left-0 right-0 bg-white border-t justify-around items-center py-3 z-10'
     ):
 
-        refs['btn_today'] = ui.button(icon='calendar_today',
+        refs['btn_today'] = ui.button(icon='home',
             on_click=lambda: switch_tab('today')
         ).props('flat round').classes('text-2xl text-gray-400')
 
