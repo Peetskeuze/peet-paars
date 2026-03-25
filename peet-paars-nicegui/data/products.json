@@ -5212,5 +5212,80 @@
     "alias": [
       "boterhammen ei"
     ]
+  },
+  {
+    "id": "aardappelen",
+    "name": "aardappelen",
+    "label": "aardappelen",
+    "unit": "gram",
+    "kcal": 77.0,
+    "protein": 2.0,
+    "fat": 0.1,
+    "carbs": 17.6,
+    "fiber": 2.2,
+    "std_portion": 100,
+    "alias": [
+      "aardappelen"
+    ]
+  },
+  {
+    "id": "aardapplen",
+    "name": "aardapplen",
+    "label": "aardapplen",
+    "unit": "gram",
+    "kcal": 73.0,
+    "protein": 2.0,
+    "fat": 0.1,
+    "carbs": 17.5,
+    "fiber": 2.2,
+    "std_portion": 100,
+    "alias": [
+      "aardapplen"
+    ]
+  },
+  {
+    "id": "melk",
+    "name": "melk",
+    "label": "melk",
+    "unit": "ml",
+    "kcal": 122.0,
+    "protein": 8.0,
+    "fat": 5.0,
+    "carbs": 12.0,
+    "fiber": 0.0,
+    "std_portion": 250,
+    "alias": [
+      "melk"
+    ]
+  },
+  {
+    "id": "kip",
+    "name": "kip",
+    "label": "kip",
+    "unit": "gram",
+    "kcal": 165.0,
+    "protein": 31.0,
+    "fat": 3.6,
+    "carbs": 0.0,
+    "fiber": 0.0,
+    "std_portion": 100,
+    "alias": [
+      "kip"
+    ]
+  },
+  {
+    "id": "gebakken_ei",
+    "name": "gebakken ei",
+    "label": "gebakken ei",
+    "unit": "stuk",
+    "kcal": 90.0,
+    "protein": 6.0,
+    "fat": 7.0,
+    "carbs": 1.0,
+    "fiber": 0.0,
+    "std_portion": 1,
+    "alias": [
+      "gebakken ei"
+    ]
   }
 ]

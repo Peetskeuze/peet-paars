@@ -323,18 +323,65 @@ def test_click():
 def render_input_tab():
 
     mode = app_state.get('input_mode', 'menu')
+    pending_choice = app_state.get('pending_product_choice')
+    pending_new = app_state.get('pending_new_product')
+
+    # ============================================================
+    # PENDING FLOW HEEFT PRIORITEIT
+    # ============================================================
+
+    if pending_choice:
+        with ui.card().classes('w-full gap-2'):
+            ui.label(f"Kies product voor: {pending_choice['name']}").classes('font-semibold text-orange-700')
+
+            for option in pending_choice.get('options', []):
+                label = option.get('name') or option.get('label') or '?'
+                ui.button(
+                    label,
+                    on_click=lambda opt=option: choose_pending_product(opt.get('id'))
+                ).classes('w-full')
+
+            with ui.row().classes('gap-2'):
+                ui.button(
+                    'Nieuw product maken',
+                    on_click=create_new_product_from_choice
+                ).props('color=primary')
+
+                ui.button(
+                    'Annuleren',
+                    on_click=cancel_pending_product_choice
+                ).props('outline')
+        return
+
+    if pending_new:
+        with ui.card().classes('w-full gap-2'):
+            ui.label(f"Nieuw product: {pending_new['name']}").classes('font-semibold text-orange-700')
+
+            refs['pending_unit_choice'] = ui.radio(
+                ['per stuk', 'per 250 ml', 'per 100 gram'],
+                value='per 100 gram'
+            ).props('inline')
+
+            with ui.row().classes('gap-2'):
+                ui.button(
+                    'Opslaan met AI & toevoegen',
+                    on_click=fill_pending_product_with_ai
+                ).props('color=primary')
+
+                ui.button(
+                    'Annuleren',
+                    on_click=cancel_pending_product
+                ).props('outline')
+        return
 
     # ============================================================
     # LOADING SPINNER
     # ============================================================
 
     if app_state.get('loading_recipe'):
-
         with ui.card().classes('w-full items-center p-6 gap-2'):
-
             ui.spinner(size='lg')
-            ui.label('De appt denkt even na...').classes('text-sm text-gray-500 text-center')
-
+            ui.label('De app denkt even na...').classes('text-sm text-gray-500 text-center')
         return
 
     # ============================================================
@@ -342,13 +389,10 @@ def render_input_tab():
     # ============================================================
 
     if mode == 'menu':
-
         with ui.column().classes('w-full gap-3'):
-
             ui.label('Wat wil je doen?').classes('text-lg font-semibold')
 
             with ui.grid(columns=2).classes('w-full gap-2'):
-
                 ui.button(
                     'Eten',
                     on_click=lambda: set_input_mode('food')
@@ -359,7 +403,6 @@ def render_input_tab():
                     on_click=lambda: set_input_mode('quick')
                 ).classes('h-14').props('outline')
 
-                # 🔥 FULL WIDTH
                 ui.button(
                     'Beweging',
                     on_click=lambda: set_input_mode('activity')
@@ -374,98 +417,97 @@ def render_input_tab():
                     'Lunch',
                     on_click=lambda: asyncio.create_task(generate_recipe('Lunch'))
                 ).classes('h-14').props('outline')
+        return
 
     # ============================================================
-    # INPUT SCHERMEN
+    # TERUG KNOP
     # ============================================================
 
-    else:
+    ui.button(
+        '← Terug',
+        on_click=lambda: set_input_mode('menu')
+    ).props('flat')
 
-        ui.button(
-            '← Terug',
-            on_click=lambda: set_input_mode('menu')
-        ).props('flat')
+    # ============================================================
+    # FOOD
+    # ============================================================
 
-        # =========================
-        # FOOD
-        # =========================
-        if mode == 'food':
+    if mode == 'food':
+        with ui.card().classes('w-full gap-2'):
+            ui.label('Eten toevoegen')
 
-            with ui.card().classes('w-full gap-2'):
+            refs['food_select'] = ui.select(
+                options=sorted([
+                    p.get('name') or p.get('label')
+                    for p in PRODUCTS
+                    if p.get('name') or p.get('label')
+                ]),
+                with_input=True
+            ).classes('w-full')
 
-                ui.label('Eten toevoegen')
+            refs['food_amount'] = ui.number(
+                label='Hoeveelheid',
+                value=100
+            ).classes('w-full')
 
-                refs['food_select'] = ui.select(
-                    options=sorted([
-                        p.get('name') or p.get('label')
-                        for p in PRODUCTS
-                        if p.get('name') or p.get('label')
-                    ]),
-                    with_input=True
-                ).classes('w-full')
+            ui.button(
+                'Toevoegen',
+                on_click=add_selected_food
+            ).props('color=primary').classes('w-full')
 
-                refs['food_amount'] = ui.number(
-                    label='Hoeveelheid',
-                    value=100
-                ).classes('w-full')
+    # ============================================================
+    # QUICK
+    # ============================================================
 
+    elif mode == 'quick':
+        with ui.card().classes('w-full gap-4'):
+            ui.label('Snelle invoer').classes('text-lg font-semibold')
+
+            refs['quick_input'] = ui.input(
+                label='Voer product in',
+                placeholder='bijv: 150 kip + 200 kwark'
+            ).classes('w-full')
+
+            # 🔥 ENTER = submit (oude NiceGUI manier)
+            refs['quick_input'].on('keydown.enter', lambda e: quick_add())
+
+            with ui.row().classes('w-full gap-2'):
                 ui.button(
-                    'Toevoegen',
-                    on_click=add_selected_food
-                ).props('color=primary').classes('w-full')
-
-        # =========================
-        # QUICK
-        # =========================
-        elif mode == 'quick':
-
-            with ui.card().classes('w-full gap-2'):
-
-                ui.label('Snelle invoer')
-
-                refs['quick_input'] = ui.input(
-                    placeholder='bijv: 2 boterham kaas + appel'
-                ).classes('w-full')
-
-                refs['quick_add_btn'] = ui.button(
                     'Toevoegen',
                     on_click=quick_add
-                ).props('color=primary').classes('w-full')
-
-        # =========================
-        # ACTIVITY
-        # =========================
-        elif mode == 'activity':
-
-            with ui.card().classes('w-full gap-2'):
-
-                ui.label('Beweging toevoegen')
-
-                refs['activity_select'] = ui.select(
-                    options=list(ACTIVITY_MET.keys())
-                ).classes('w-full')
-
-                refs['activity_duration'] = ui.number(
-                    label='Duur (minuten)',
-                    value=30
-                ).classes('w-full')
-
-                refs['activity_garmin'] = ui.number(
-                    label='Of kcal (bijv Garmin)',
-                    value=0
-                ).classes('w-full')
+                ).props('color=primary').classes('grow')
 
                 ui.button(
-                    'Toevoegen',
-                    on_click=add_activity
-                ).props('color=primary').classes('w-full')
+                    '← Terug',
+                    on_click=lambda: set_input_mode('menu')
+                ).props('outline')
 
-        # =========================
-        # PENDING PRODUCT
-        # =========================
+    # ============================================================
+    # ACTIVITY
+    # ============================================================
 
-        refs['pending_product_box'] = ui.column().classes('w-full')
+    elif mode == 'activity':
+        with ui.card().classes('w-full gap-2'):
+            ui.label('Beweging toevoegen')
 
+            refs['activity_select'] = ui.select(
+                options=list(ACTIVITY_MET.keys())
+            ).classes('w-full')
+
+            refs['activity_duration'] = ui.number(
+                label='Duur (minuten)',
+                value=30
+            ).classes('w-full')
+
+            refs['activity_garmin'] = ui.number(
+                label='Of kcal (bijv Garmin)',
+                value=0
+            ).classes('w-full')
+
+            ui.button(
+                'Toevoegen',
+                on_click=add_activity
+            ).props('color=primary').classes('w-full')
 
     # ============================================================
     # RECEPT TONEN
@@ -474,13 +516,9 @@ def render_input_tab():
     pending_recipe = app_state.get('pending_recipe')
 
     if pending_recipe:
-
         with ui.card().classes('w-full gap-2'):
-
             ui.label('Voorstel van Peet').classes('text-lg font-semibold')
-
             ui.label(pending_recipe.get('product', 'Recept')).classes('font-semibold')
-
             ui.label(f"{pending_recipe.get('kcal', 0)} kcal").classes('text-sm text-gray-500')
 
             ingredients = pending_recipe.get('meta', {}).get('ingredients', [])
@@ -505,8 +543,6 @@ def render_input_tab():
                     'Andere proberen',
                     on_click=reject_recipe
                 ).props('outline')
-
-
 
 def set_input_mode(mode: str) -> None:
     app_state['input_mode'] = mode
@@ -651,6 +687,9 @@ def calculate_kcal(product: dict, amount: float) -> float:
 
     # producten per stuk
     if unit == "stuk":
+        # 🔥 als iemand 100 invoert, behandelen als gram fallback
+        if amount > 10:
+            return (kcal_value / 100.0) * amount
         return kcal_value * amount
 
     # fallback
@@ -965,6 +1004,7 @@ Geef alleen JSON in dit formaat:
         return fallback()
 
 def ai_build_product(product_name: str, unit_choice: str) -> dict:
+
     if unit_choice == 'per stuk':
         unit = 'stuk'
         std_portion = 1
@@ -984,10 +1024,17 @@ def ai_build_product(product_name: str, unit_choice: str) -> dict:
     prompt = f"""
 Je bent een nutrition database assistent.
 
-Geef realistische gemiddelde voedingswaarden voor dit product:
+BELANGRIJK:
+- Blijf EXACT bij het product dat de gebruiker invoert
+- Corrigeer kleine typefouten (bijv "kwar" -> "kwark")
+- Verander het product niet naar iets anders
+- "noten" moet noten blijven
+- "kip" moet kip blijven
 
 PRODUCT: {product_name}
 EENHEID: {prompt_unit}
+
+Geef realistische gemiddelde voedingswaarden.
 
 Geef alleen JSON in exact dit formaat:
 
@@ -998,18 +1045,25 @@ Geef alleen JSON in exact dit formaat:
   "carbs": 0,
   "fiber": 0
 }}
-
-Gebruik alleen cijfers.
-Geen uitleg.
 """
+
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-    response = client.responses.create(model='gpt-4o-mini', input=prompt)
+
+    response = client.responses.create(
+        model='gpt-4o-mini',
+        input=prompt
+    )
+
     raw = getattr(response, 'output_text', '') or ''
     cleaned = raw.replace('```json', '').replace('```', '').strip()
+
     match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+
     if not match:
         raise ValueError('AI gaf geen geldig JSON object terug.')
+
     ai_data = json.loads(match.group())
+
     return {
         'id': product_name.lower().replace(' ', '_'),
         'name': product_name,
@@ -1023,7 +1077,6 @@ Geen uitleg.
         'std_portion': std_portion,
         'alias': [product_name],
     }
-
 # ============================================================
 # UI HELPERS
 # ============================================================
@@ -1157,6 +1210,10 @@ def refresh_weight_chart() -> None:
 
 def refresh_ui() -> None:
 
+    # ============================================================
+    # DATA & PRODUCTS
+    # ============================================================
+
     global PRODUCTS
     PRODUCTS = load_products()
 
@@ -1168,6 +1225,10 @@ def refresh_ui() -> None:
 
     if 'food_select' in refs:
         refs['food_select'].options = product_names
+
+    # ============================================================
+    # CONTEXT
+    # ============================================================
 
     selected_dt = date.fromisoformat(app_state['selected_date'])
     today_dt = date.today()
@@ -1183,9 +1244,14 @@ def refresh_ui() -> None:
         else:
             refs['day_title'].set_text(app_state.get('active_tab', '').capitalize())
 
+    if 'day_sub' in refs:
         refs['day_sub'].set_text(
             f"{selected_dt.day} {NL_MONTH_FULL[selected_dt.month - 1]}"
         )
+
+    # ============================================================
+    # INPUT ENABLE / DISABLE
+    # ============================================================
 
     if 'quick_input' in refs:
         refs['quick_input'].enabled = not day_closed
@@ -1193,64 +1259,25 @@ def refresh_ui() -> None:
     if 'quick_add_btn' in refs:
         refs['quick_add_btn'].enabled = not day_closed
 
+    # ============================================================
+    # UI DATA
+    # ============================================================
+
     app_state['ui_data'] = build_ui_data()
 
-    pending_choice = app_state.get('pending_product_choice')
-    pending_new = app_state.get('pending_new_product')
 
-    if 'pending_product_box' in refs:
-        refs['pending_product_box'].clear()
-
-        if pending_choice:
-            with refs['pending_product_box']:
-                ui.label(
-                    f"Ik vond meerdere producten voor '{pending_choice['name']}'. Kies de juiste:"
-                ).classes('text-sm text-orange-700')
-
-                for option in pending_choice.get('options', []):
-                    label = option.get('name') or option.get('label') or '?'
-                    ui.button(
-                        label,
-                        on_click=lambda product_id=option.get('id'): choose_pending_product(product_id)
-                    ).props('outline').classes('w-full')
-
-                with ui.row().classes('gap-2'):
-                    ui.button(
-                        'Nieuw product maken',
-                        on_click=create_new_product_from_choice
-                    ).props('color=primary')
-
-                    ui.button(
-                        'Annuleren',
-                        on_click=cancel_pending_product_choice
-                    ).props('outline')
-
-        elif pending_new:
-            with refs['pending_product_box']:
-                ui.label(
-                    f"Product '{pending_new['name']}' staat niet in de database."
-                ).classes('text-sm text-orange-700')
-
-                refs['pending_unit_choice'] = ui.radio(
-                    ['per stuk', 'per 250 ml', 'per 100 gram'],
-                    value='per 100 gram'
-                ).props('inline')
-
-                with ui.row().classes('gap-2'):
-                    ui.button(
-                        f"De app vult '{pending_new['name']}' in",
-                        on_click=fill_pending_product_with_ai
-                    ).props('color=primary')
-
-                    ui.button(
-                        'Annuleren',
-                        on_click=cancel_pending_product
-                    ).props('outline')
+    # ============================================================
+    # STATUS
+    # ============================================================
 
     if 'day_status' in refs:
         refs['day_status'].set_text(
             'Deze dag is afgesloten.' if day_closed else ''
         )
+
+    # ============================================================
+    # RENDER REFRESH
+    # ============================================================
 
     render_today_tab.refresh()
     render_input_tab.refresh()
@@ -1321,126 +1348,211 @@ def on_change_target_kcal(e) -> None:
 
 def process_quick_food_input(text: str) -> None:
 
-    day_rec = ensure_day(app_state['selected_date'])
+    try:
+        print("PROCESS START")
 
-    # ------------------------------------------------------------
-    # Stap 1 — invoer normaliseren
-    # ------------------------------------------------------------
+        day_rec = ensure_day(app_state['selected_date'])
+        added_any = False
+        added_products = set()
 
-    text = text.lower().replace(",", "+")
-    text = text.replace("  ", " ").strip()
+        # ------------------------------------------------------------
+        # Stap 1 — invoer normaliseren
+        # ------------------------------------------------------------
 
-    raw_entries = []
+        text = text.lower()
+        text = re.sub(r'\+(\d)', r'+ \1', text)
+        text = text.replace(",", "+")
+        text = re.sub(r'\s+', ' ', text).strip()
 
-    for part in text.split("+"):
-        part = part.strip()
-        if not part:
-            continue
+        raw_entries = re.split(r'\s*\+\s*|\s+(?=\d)', text)
+        entries = [e.strip() for e in raw_entries if e.strip()]
 
-        matches = re.findall(r'\d+(?:[.,]\d+)?\s+[^\d+]+', part)
+        for entry in entries:
 
-        if matches:
-            raw_entries.extend(matches)
-        else:
-            raw_entries.append(part)
+            # ------------------------------------------------------------
+            # Stap 2 PARSE entry (ALTIJD zetten!)
+            # ------------------------------------------------------------
 
-    entries = [e.strip() for e in raw_entries if e.strip()]
+            match = re.match(r'(\d+(?:[.,]\d+)?)\s+(.+)', entry)
 
-    # ------------------------------------------------------------
-    # Stap 2 — entries verwerken
-    # ------------------------------------------------------------
+            if match:
+                amount = float(match.group(1).replace(',', '.'))
+                product_text = match.group(2).strip()
+            else:
+                amount = None
+                product_text = entry.strip()
 
-    for entry in entries:
+            # ------------------------------------------------------------
+            # DEFAULT HOEVEELHEID (VEILIG)
+            # ------------------------------------------------------------
 
-        match = re.match(r'(\d+(?:[.,]\d+)?)\s+(.+)', entry)
+            if amount is None:
+                name = product_text.lower()
 
-        if match:
-            amount = float(match.group(1).replace(',', '.'))
-            product_text = match.group(2).strip()
-        else:
-            amount = None
-            product_text = entry.strip()
+                if 'ei' in name:
+                    amount = 1
+                elif 'kwark' in name:
+                    amount = 250
+                elif 'kip' in name:
+                    amount = 150
+                elif 'brood' in name or 'boterham' in name:
+                    amount = 1
+                else:
+                    amount = 100  # 🔥 fallback
 
-        results = search_products(product_text) or []
-        search = product_text.lower()
+            # ------------------------------------------------------------
+            # TYPO FIX
+            # ------------------------------------------------------------
 
-        exact_match = None
+            product_text = product_text.lower()
+            product_text = product_text.replace("kwar", "kwark")
+            product_text = product_text.replace("eireren", "eieren")
+            product_text = product_text.replace("eiere", "eieren")
 
-        # 1. exacte naam
-        for r in results:
-            name = (r.get('name') or '').lower()
-            if name == search:
-                exact_match = r
-                break
+            # ------------------------------------------------------------
+            # NORMALISATIE
+            # ------------------------------------------------------------
 
-        # 2. alias exact
-        if not exact_match:
+            normalized = product_text.strip()
+
+            if normalized == 'kip':
+                normalized = 'kipfilet'
+            elif normalized == 'kwark':
+                normalized = 'magere kwark'
+            elif normalized == 'ei':
+                normalized = 'ei heel'
+            elif normalized == 'biefstuk':
+                normalized = 'runderbiefstuk'
+            elif normalized in ['aardappel', 'aardappelen']:
+                normalized = 'aardappel'
+
+            # ------------------------------------------------------------
+            # ZOEKEN
+            # ------------------------------------------------------------
+
+            results = search_products(normalized)
+            if not isinstance(results, list):
+                results = []
+
+            if not results:
+                for w in product_text.split():
+                    partial = search_products(w)
+                    if isinstance(partial, list) and partial:
+                        results = partial
+                        break
+
+            search = product_text.lower().strip()
+            exact_match = None
+
+            # exacte naam
             for r in results:
-                raw_aliases = r.get('alias', [])
-                if isinstance(raw_aliases, str):
-                    raw_aliases = [raw_aliases]
-                aliases = [a.lower() for a in raw_aliases]
-                if search in aliases:
+                if (r.get('name') or '').lower() == search:
                     exact_match = r
                     break
 
-        # 3. duidelijke prefix match
-        if not exact_match:
-            starts_with_matches = []
-            for r in results:
-                name = (r.get('name') or '').lower()
-                if name.startswith(search):
-                    starts_with_matches.append(r)
+            # alias
+            if not exact_match:
+                for r in results:
+                    aliases = r.get('alias', [])
+                    if isinstance(aliases, str):
+                        aliases = [aliases]
 
-            if len(starts_with_matches) == 1:
-                exact_match = starts_with_matches[0]
-            elif len(starts_with_matches) > 1:
-                app_state['pending_product_choice'] = {
+                    if search in [a.lower() for a in aliases]:
+                        exact_match = r
+                        break
+
+            # ------------------------------------------------------------
+            # STARTSWITH (ALLEEN VEILIG BIJ LANGE INPUT)
+            # ------------------------------------------------------------
+
+            if not exact_match:
+                matches = [
+                    r for r in results
+                    if (r.get('name') or '').lower().startswith(search)
+                ]
+
+                if len(matches) == 1 and len(search) >= 5:
+                    exact_match = matches[0]
+
+                elif len(matches) >= 1:
+                    app_state['pending_product_choice'] = {
+                        'name': product_text,
+                        'amount': amount,
+                        'options': matches[:5],
+                    }
+                    refresh_ui()
+                    return  # 🔥 STOP hier
+
+
+            # ------------------------------------------------------------
+            # CONTAINS (NOOIT AUTO MATCHEN)
+            # ------------------------------------------------------------
+
+            if not exact_match:
+                matches = [
+                    r for r in results
+                    if search in (r.get('name') or '').lower()
+                ]
+
+                if len(matches) >= 1:
+                    app_state['pending_product_choice'] = {
+                        'name': product_text,
+                        'amount': amount,
+                        'options': matches[:5],
+                    }
+                    refresh_ui()
+                    return  # 🔥 STOP hier
+
+            # ------------------------------------------------------------
+            # GEEN MATCH → NIEUW PRODUCT FLOW
+            # ------------------------------------------------------------
+
+            if not exact_match:
+                app_state['pending_new_product'] = {
                     'name': product_text,
                     'amount': amount,
-                    'options': starts_with_matches[:5],
                 }
                 refresh_ui()
-                return
+                return  # 🔥 hier moet je stoppen
+            # ------------------------------------------------------------
+            # TOEVOEGEN
+            # ------------------------------------------------------------
 
-        # 4. zoekterm zit in naam
-        if not exact_match:
-            contains_matches = []
-            for r in results:
-                name = (r.get('name') or '').lower()
-                if search in name:
-                    contains_matches.append(r)
+            product_id = exact_match.get('id') or exact_match.get('name')
+            key = f"{product_id}_{amount}"
 
-            if len(contains_matches) == 1:
-                exact_match = contains_matches[0]
-            elif len(contains_matches) > 1:
-                app_state['pending_product_choice'] = {
-                    'name': product_text,
-                    'amount': amount,
-                    'options': contains_matches[:5],
-                }
-                refresh_ui()
-                return
+            if key not in added_products:
+                add_food_item_to_day(day_rec, exact_match, amount)
+                added_products.add(key)
+                added_any = True
+        # ------------------------------------------------------------
+        # Stap 3 — opslag + UI (BUITEN LOOP)
+        # ------------------------------------------------------------
 
-        # 5. geen product gevonden
-        if not exact_match:
-            app_state['pending_new_product'] = {
-                'name': product_text,
-                'amount': amount,
-            }
-            refresh_ui()
-            return
+        if added_any:
+            save_data()
+            app_state['ui_data'] = build_ui_data()
 
-        add_food_item_to_day(day_rec, exact_match, amount)
+           
+            if added_any and not app_state.get('pending_product_choice') and not app_state.get('pending_new_product'):
+                if 'quick_input' in refs:
+                    refs['quick_input'].value = ''
 
-    save_data()
-    refs['quick_input'].value = ''
+
+            # 🔥 ALLEEN resetten als er GEEN vervolgactie nodig is
+            if not app_state.get('pending_product_choice') and not app_state.get('pending_new_product'):
+                switch_tab('today')
+                safe_notify('Product(en) toegevoegd', 'positive')
+
+        print("PROCESS EINDE")
+
+    except Exception as e:
+        print("ERROR IN PROCESS:", e)
+
+        import traceback
+        traceback.print_exc()
+
     refresh_ui()
-    safe_notify('Product(en) toegevoegd', 'positive')
-
-import uuid
-
-import uuid
 
 def accept_recipe() -> None:
 
@@ -1562,11 +1674,28 @@ async def generate_combo_recipes(diner_kcal: int, snack_kcal: int):
     render_input_tab.refresh()
 
 def quick_add() -> None:
-    text = refs['quick_input'].value or ''
-    if not text.strip():
-        safe_notify('Voer iets in.')
-        return
-    process_quick_food_input(text)
+
+    print("QUICK ADD TRIGGERED")
+    ui.notify("quick_add gestart")
+
+    try:
+        text = refs['quick_input'].value or ''
+        print(f"INPUT VALUE: {text}")
+
+        if not text.strip():
+            safe_notify('Voer iets in.')
+            return
+
+        # 🔥 DEZE TOEVOEGEN
+        switch_tab('input')
+
+        print("CALLING PROCESS FUNCTION")
+        process_quick_food_input(text)
+        print("PROCESS FUNCTION DONE")
+
+    except Exception as e:
+        print("ERROR IN QUICK ADD:", e)
+        ui.notify(f"ERROR: {e}", type='negative')
 
 def cancel_pending_product() -> None:
     app_state['pending_new_product'] = None
@@ -1768,9 +1897,6 @@ async def generate_recipe(meal_type: str) -> None:
     refs['tabs'].set_value(refs['tab_input'])
     render_input_tab.refresh()
 
-def reject_recipe() -> None:
-    app_state['pending_recipe'] = None
-    render_input_tab.refresh()
 
 def close_day() -> None:
     day_rec = ensure_day(app_state['selected_date'])
@@ -1888,16 +2014,6 @@ def render_today_tab() -> None:
                             on_click=lambda item_id=item.get('id'): delete_food(item_id)
                         ).props('flat dense')
 
-            for item in day_rec.get('food_items', []):
-                with ui.row().classes('w-full items-center justify-between'):
-                    ui.label(
-                        f"{item.get('product')} | {item.get('amount')} {item.get('unit')} | {item.get('kcal')} kcal"
-                    ).classes('text-sm')
-
-                    ui.button(
-                        '❌',
-                        on_click=lambda item_id=item.get('id'): delete_food(item_id)
-                    ).props('flat dense')
 
     if day_rec.get('activity_items'):
         with ui.card().classes('w-full gap-2'):
@@ -1917,16 +2033,6 @@ def render_today_tab() -> None:
                             on_click=lambda item_id=item.get('id'): delete_activity(item_id)
                         ).props('flat dense')
 
-            for item in day_rec.get('activity_items', []):
-                with ui.row().classes('w-full items-center justify-between'):
-                    ui.label(
-                        f"{item.get('activity')} | {item.get('duration_min')} min | {item.get('kcal')} kcal"
-                    ).classes('text-sm')
-
-                    ui.button(
-                        '❌',
-                        on_click=lambda item_id=item.get('id'): delete_activity(item_id)
-                    ).props('flat dense')
     # ============================================================
     # SLIMME KEUZE (PEET)
     # ============================================================
