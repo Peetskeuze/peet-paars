@@ -116,12 +116,12 @@ document.addEventListener('touchend', function(e) {
 function handleSwipe() {
     let diff = endX - startX;
 
-    if (Math.abs(diff) < 50) return;
+    if (Math.abs(diff) < 60) return;
 
     if (diff < 0) {
-        window.nicegui.send_event('swipe_left');
+        window.location.hash = 'swipe_left';
     } else {
-        window.nicegui.send_event('swipe_right');
+        window.location.hash = 'swipe_right';
     }
 }
 
@@ -2283,13 +2283,30 @@ def safe_refresh():
 
 ui.timer(0.1, safe_refresh, once=True)
 
+def check_swipe():
+    result = ui.run_javascript('window.location.hash')
+
+    if not result:
+        return
+
+    value = result
+
+    if 'swipe_left' in value:
+        handle_swipe('left')
+
+    elif 'swipe_right' in value:
+        handle_swipe('right')
+
+    # reset
+    ui.run_javascript('window.location.hash = ""')
+
+
+ui.timer(0.3, check_swipe)
+
 import os
 port = int(os.environ.get("PORT", 8080))
 
 switch_tab('today')
-
-ui.on('swipe_left', lambda: handle_swipe('left'))
-ui.on('swipe_right', lambda: handle_swipe('right'))
 
 ui.run(
     host="0.0.0.0",
