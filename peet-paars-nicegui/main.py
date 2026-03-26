@@ -91,19 +91,50 @@ html, body {
     min-height: 100vh !important;
 }
 
-/* App background (splash feel) */
+/* App background */
 body {
     background-color: #6E3BF7;
 }
 </style>
 
 <script>
+// ========================
+// SWIPE NAVIGATIE
+// ========================
+let startX = 0;
+let endX = 0;
+
+document.addEventListener('touchstart', function(e) {
+    startX = e.changedTouches[0].screenX;
+}, false);
+
+document.addEventListener('touchend', function(e) {
+    endX = e.changedTouches[0].screenX;
+    handleSwipe();
+}, false);
+
+function handleSwipe() {
+    let diff = endX - startX;
+
+    if (Math.abs(diff) < 50) return;
+
+    if (diff < 0) {
+        window.nicegui.send_event('swipe_left');
+    } else {
+        window.nicegui.send_event('swipe_right');
+    }
+}
+
+// ========================
 // SERVICE WORKER
+// ========================
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
 }
 
+// ========================
 // INSTALL PROMPT
+// ========================
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -111,7 +142,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
   deferredPrompt = e;
 
   const btn = document.createElement('button');
-  btn.innerText = '📲 Installeer Peet Coach';
+  btn.innerText = 'Installeer Peet Coach';
   btn.style.position = 'fixed';
   btn.style.bottom = '80px';
   btn.style.left = '50%';
@@ -135,7 +166,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
 </script>
 
 """)
-
 # ============================================================
 # USER PROFILE (persoonlijk dagdoel)
 # ============================================================
@@ -308,6 +338,22 @@ refs = {}
 # ============================================================
 # HELPERS
 # ============================================================
+
+def handle_swipe(direction: str):
+
+    order = ['today', 'input', 'coach', 'settings']
+    current = app_state.get('active_tab', 'today')
+
+    if current not in order:
+        return
+
+    idx = order.index(current)
+
+    if direction == 'left' and idx < len(order) - 1:
+        switch_tab(order[idx + 1])
+
+    elif direction == 'right' and idx > 0:
+        switch_tab(order[idx - 1])
 
 def debug_set_mode(mode: str):
     print("CLICK MODE:", mode)
@@ -2241,6 +2287,9 @@ import os
 port = int(os.environ.get("PORT", 8080))
 
 switch_tab('today')
+
+ui.on('swipe_left', lambda: handle_swipe('left'))
+ui.on('swipe_right', lambda: handle_swipe('right'))
 
 ui.run(
     host="0.0.0.0",
